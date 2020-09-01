@@ -1,0 +1,200 @@
+* Programming massively parralel hardware
+  
+
+* 01/09 Intro lecture
+  SCHEDULED: <2020-09-01 Tue>
+** Course organization
+The couse has a Software track and a Hardware track
+Intended learning outcomes of this lecture
+- List Homorphisms
+- Moores law and hardware trends
+- Explain what a list-homomorphic program is /and/
+- Be able to apply it to build programs
+- Illustrate and apply the 1st Theorem of List HomoMorphism to transform said programs into
+  inherently parralel ones
+
+*** Lectures
+- Tue 10:15 - 12:00, on zoom
+- Thu 10:15 - 12:00, on zoom
+
+*** Labs
+- Thu: 13-17, 3-0-25, DIKU
+- Half a class physically
+- Other half on zoom
+- /Will/ Accept students from virtual half as long as we do not overtake corona(20)
+- If possible, may stay longer
+*PURPOSE*
+- Not educative(but you can ask questions)
+- Use weekly ass to learn practical stuff
+- Can't complete them without physical help
+- *very important to attend the labs*
+
+*** Assignments
+Anders will provide feedback
+- Four individual weekly assignments: 40% of grade
+- One group project + final presentation and discussion: 60%
+  - May choose from possible projects
+  - Presented during lab at some point
+  - Or discuss our own project
+  - Can be very practical in CUDA, Futhark or more theoretical
+
+
+** Brief history
+*** Trend towards ever-increasing hardware parralellism(HP)
+- Moores law(1960s)
+Yeah u got this one
+Generally aknowledged to be slowed down at this point
+
+- ICPP, ISCA (1980/90s): parallel architechtures 
+International conference for parallel processors
+
+- Mid90 Killer-micro
+Parallel was mostly seen as "Exotic"
+The path of least resistance was to increase the speed of a Single CPU
+On a single cpu the programmers point of view didn't change. Therefore
+there was a lower barrier of entry, and easier maintenance of legacy software
+Increasing single process performance "benefits everyone" with no change
+in source
+Commercially multiprocessors was just an uniprocessor extension
+
+- Problems
+Problem was. Power usage is cubed of the frequency, approx $P_dynamic \approx freq^3$
+The Memory Wall. Performance gap between proc and mem increases
+
+In 2004 Intel shifted focus to multi-cores instead
+
+*** Biggest challenge for PH
+A duality between the hardware system, and the application.
+
+- Applications have performance requirements. 
+- Hardware systems grant Performance opportunities
+  
+Thus application pressures the hardware to perform, and hardware
+pressures the application to exploit opportunities.
+
+The example is Microsoft and Intel, which Cosmin thinks about all the time
+/at night/
+
+The biggest challenge is to develop efficient Massively-Parralel Software
+Think about programs with parallelism in mind rather than hack /some/ 
+parallelism out of a sequential implementation(se node)
+
+We need to think about developing for an infinite amount of course, since
+we don't know how many cores will be available
+
+** PMPH Main topics
+*Hardware track* is the physical components of hardware design
+- Processor (ILP, Intra and Inter-core)
+- Memory hierarchy (coherency)
+  - Several copies in the cache of the same mem-block
+- Interconnect (inter-cores or core-cache routing)
+
+*The Software track* studies programming models for data parallelism and
+a way to reason and optimize parallelism
+- High-level of abstraction
+  - List-homomorphism $\equiv$ functional map-reduce style and flattening
+- Low-level:
+  - Loops and transformations rooted in data dependency analysis
+  - c-programming
+
+    
+*The Lab* track applies in practice the optimizations/transformations learned
+in the software track
+
+The lecture notes will explain things to some extent, hardware book isn't mandatory
+
+The hardware track is /important/ BUT the focus will be on software
+
+** Abstractions in this course
+A /program/ is to a /process or thread/ what a recipe is for cooking
+/A processor(core)/ is a hardware entity capable of sequencing &
+executing insts
+/MT Cores/ Multiple threads in own context
+
+** Software(List homomorphism)
+Consider the realm of finite lists
+.. denites list concatenation
+Empty list is the neutral element eg [] (..) x === x (..) [] === x
+
+LH is a special form of divide and conquer
+we denote
+h [] = e
+h [x] = f x
+h (x .. y) = (h x) (merged with a binop) (h y)
+
+A well-defined program requires that no matter
+how the input list is partitioned into, x .. y 
+the result is the same
+
+(compute the length of the list)
+#+BEGIN_SRC 
+len :: [T] -> Int
+len [] = 0
+len [x] = one(x) //where one(n) = 1 aka const
+len (x..y) = (len x) + (len y)
+#+END_SRC
+That is the basic idea
+
+What about a function that computes whether a list satisfies predicat p
+
+#+BEGIN_SRC 
+all_p :: [T] -> Bool
+all_p [] = True // Because later we will probably use /and/ to compare
+all_p [x] = p (x)
+all_p (x..y) = (all_p x) && (all_p y)
+#+END_SRC
+(all_p x) is whether all elements of p returns true
+
+*** Definition of monoid
+Assume set $S$ and $binop : S x S \rightarrow S$. $(S,binop)$ is called a Monoid
+If it satisfies the two axioms
+1. Associativity $\forall x,y,z \in S$ we have $(x\ binop\ y)\ binop\ z \equiv x\ binop\ (y\ op\ z)$
+2. Identity element: There exists $e \in S$ st. $\forall a \in S, e\ op\ a\ \equiv a\ op\ r\ \equiv a$
+
+*** Definition of Monoid Homomorphism
+A monoid homomorphism from monoid (S,op) to monoid (T,op2) is a function
+h: S -> T st. $\forall u,v\in S, h(u op v) \equiv h(u) op2 h(v)
+
+
+** TODO Basic blocks: Map
+Map :: (al -> be) -> [al] -> [be] has inherently parralel semantics
+| x = map f | [ a1, a2, a3 ]      |
+| x'        | [f a1, f a2, f a3 ] |
+
+** TODO Basic blocks Reduce
+reduce applies an operator across all list elements
+
+** 1.st lh theorem[Meertens]
+#+BEGIN_SRC
+h [] = e
+h [x] = f x
+h (x .. y) = (h x) (merged with a binop) (h y)
+h === (reduce binop e) applied to (map f)
+#+END_SRC
+
+So in previous example
+#+BEGIN_SRC 
+len :: [T] -> Int
+len [] = 0
+len [x] = one(x) //where one(n) = 1 aka const
+len (x..y) = (len x) + (len y)
+
+len === (reduce (+) 0) on (map one)
+#+END_SRC
+
+And all_p
+#+BEGIN_SRC 
+all_p :: [T] -> Bool
+all_p [] = True // Because later we will probably use /and/ to compare
+all_p [x] = p (x)
+all_p (x..y) = (all_p x) && (all_p y)
+
+(reduce (&) True) on (map p)
+#+END_SRC
+
+I caml
+#+BEGIN_SRC ocaml
+let tmp = map p arr
+let result = reduce (&) True tmp
+#+END_SRC
+
