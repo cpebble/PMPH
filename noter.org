@@ -267,13 +267,13 @@ Second:
 - MIS = 4(-1,5)
 - TS = -1
 
-We now want to denote the functions =mis=, =
-/mis/ = max(mis_1, ts_1 + mis_2)  
+We now want to denote the functions =mis=,  
+- /mis/ = max(mis_1, ts_1 + mis_2)  
   If the first initial is lower than the whole first segment + the second initial, then it spans 
   the whole first sublist and the initial of the second  
-/mcs/ = max(mcs_2, ts_2 + mcs_1)
+- /mcs/ = max(mcs_2, ts_2 + mcs_1)
   Same as before, but the other way aorund
-/mss/ = max(mss_1, mss_2, mcs_1 + mis_2)
+- /mss/ = max(mss_1, mss_2, mcs_1 + mis_2)
   Either the mss of either split OR the split that crosses the boundary
 
 #+BEGIN_SRC haskell
@@ -352,5 +352,5 @@ If we know WT's work and depth, then Brents Theorem gives a good complexity boun
 for a PRAM
 
 ** Brent Theorem
-A work-Time algorithm of Depth D(n) and work W(n) can be simulated on a P-processor PRAM in time complex T st
+A work-Time algorithm of Depth D(n) and work W(n) can be simulated on a P-processor PRAM in time complex T  
 $$ \frac{W(n)}{P} \leq T < \frac{W(n)}{P} + D(n) $$
