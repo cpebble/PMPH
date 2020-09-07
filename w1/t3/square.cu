@@ -7,7 +7,7 @@ __global__ void kernel(float *d_in, float *d_out, int N){
   const unsigned int lid = threadIdx.x; // Local id inside a block
   const unsigned int gid = blockIdx.x*blockDim.x + lid; // global id
   if (gid < N){
-    d_out[gid] = powf(d_in[gid]/(d_in[gid]-2.3), 3)
+    d_out[gid] = powf(d_in[gid]/(d_in[gid]-2.3), 3);
   }
 }
 
