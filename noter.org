@@ -403,7 +403,7 @@ Simple square function (map (\x -> x*x)
     cudaMemcpy(d_in, h_in, mem_size, cudaMemcpyHostToDevice);
 
     // Exec kernel
-    squarekernel<<< 1, N>>>(d_in, d_out);
+    squareKernel<<< 1, N>>>(d_in, d_out);
 
     // Copy result from device to host
     cudaMemcpy(h_out, d_out, mem_size, cudaMemcpyDeviceToHost);
@@ -458,4 +458,4 @@ unsigned int block_size = 256;
 unsigned int num_blocks = ((N+(block_size-1) / block_size);
 squarekernel<<< num_blocks, block_size>>>(d_in,d_out,N)
 #+END_SRC
-And 
+And this will be the basis for the first assignment
