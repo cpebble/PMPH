@@ -58,7 +58,7 @@ int main( int argc, char** argv){
   int passed = 0;
   int invalid = 0;
   for (int i = 0; i < N; ++i) {
-    if (fabs(cpu_out[i] - gpu_out[i]) < 0.0001)
+    if (fabs(seq_out[i] - gpu_out[i]) < 0.0001)
         passed++;
     else invalid++;
   }
