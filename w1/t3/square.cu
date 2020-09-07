@@ -4,8 +4,13 @@
 #include <cuda_runtime.h>
 #include <sys/time.h>
 #include <time.h>
+#ifndef BLOCK_SIZE
+  #define BLOCK_SIZE 256
+#endif
+#ifndef N_ELEMS
+  #define N_ELEMS 753411
+#endif
 
-#define BLOCK_SIZE 256
 
 // Src: Lab1-CudaIntro. Get time difference
 int timeval_subtract( 
@@ -75,7 +80,7 @@ void seq_run(float* inp, float* out, int N){
 }
 
 int main( int argc, char** argv){
-  unsigned int N = 753411;
+  unsigned int N = N_ELEMS;
   unsigned int mem_size = N*sizeof(float);
   // Init memory arrays
   float* in = (float*) malloc(mem_size);
