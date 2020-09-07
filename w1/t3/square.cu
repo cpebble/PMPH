@@ -33,6 +33,12 @@ void gpu_run(float* inp, float* out, int N)
   cudaFree(d_in); cudaFree(d_out);
 }
 
+void seq_run(float* inp, float* out, int N){
+  for(unsigned int i = 0; i < N, ++i){
+    out[i] = powf(inp[i]/(inp[i]-2.3), 3);
+  }
+}
+
 int main( int argc, char** argv){
   unsigned int N = 753411;
   unsigned int mem_size = N*sizeof(float);
@@ -43,8 +49,14 @@ int main( int argc, char** argv){
   // And init the input array
   for (unsigned int i=0; i<N; ++i) in[i] = (float)i;
 
+  // Run the code on the CPU
+  seq_run(in, seq_out, N);
   // Run the code on the GPU
   gpu_run(in, gpu_out, N);
+
+  // Print the first 10 and last 10 values to 10p of precision
+  for(int i = 0; i < 10; i++) printf("%6d:\t%.10f\t%.10f\n", i, seq_out[i], gpu_out[i]);
+  for(int i = 0; i < 10; i++) printf("%6d:\t%.10f\t%.10f\n", N-i, seq_out[N-i], gpu_out[N-i]);
   // Free outpus databases
   free(in); free(gpu_out); free(seq_out);
 
