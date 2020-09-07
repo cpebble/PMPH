@@ -1,0 +1,61 @@
+* Task 1
+* 
+* Task 3
+I wrote the code, included in =wa1-task3.cu=, in Cuda c++. The code includes the requested
+GPU parallel in the =gpu_run(float* inp, float* out, int N)= function, that takes two
+allocated arrays of memory, designed for the input and output. It's sequential equivalent
+=seq_run(float* inp, float* out, int N)= has the same signature.  
+
+When running, the functions output their runtime in microseconds. Compiling the program
+with =nvcc -O3 -DN_ELEMS=753411 wa1-task3.cu= i get the following output:
+#+BEGIN_SRC bash
+[wbr220@a00333 t3]$ ./a.out
+CPU Run took 53609 microseconds (53.61ms)
+GPU Run took 33 microseconds (0.03ms)
+Passed: 753411, Invalid: 000000
+#+END_SRC
+Which clearly demonstrates the effectiveness of parallel programming. The GPU Runs 99.9%
+faster than the CPU, outside of the time it takes to move the data to and from the device.
+This speedup is mostly explained by the GPU computing the results in blocks of 256 at a
+time.
+
+We are interested in locating the spot where the GPU computes faster than the CPU. To
+help us, the compiler takes a directive: N_ELEMS, which defines amount of elements. To
+find the point i continually recompile the program while changing this amount, and log the
+time values
+#+BEGIN_SRC bash
+[wbr220@a00333 t3]$ ./test.sh
+Compiling test 1
+TEST 1
+CPU Run took 7 microseconds (0.01ms)
+GPU Run took 29 microseconds (0.03ms)
+Passed: 000001, Invalid: 000000
+Compiling test 10
+TEST 10
+CPU Run took 8 microseconds (0.01ms)
+GPU Run took 31 microseconds (0.03ms)
+Passed: 000010, Invalid: 000000
+Compiling test 100
+TEST 100
+CPU Run took 16 microseconds (0.02ms)
+GPU Run took 30 microseconds (0.03ms)
+Passed: 000100, Invalid: 000000
+Compiling test 250
+TEST 250
+CPU Run took 26 microseconds (0.03ms)
+GPU Run took 28 microseconds (0.03ms)
+Passed: 000250, Invalid: 000000
+Compiling test 500
+TEST 500
+CPU Run took 49 microseconds (0.05ms)
+GPU Run took 30 microseconds (0.03ms)
+Passed: 000500, Invalid: 000000
+Compiling test 1000
+TEST 1000
+CPU Run took 93 microseconds (0.09ms)
+GPU Run took 30 microseconds (0.03ms)
+Passed: 001000, Invalid: 000000
+#+END_SRC
+
+We now clearly see that for an array of a size arond 250 the CPU starts being slower than
+the GPU, and by $n = 1000$ the GPU is more than 3 times as fast as the CPU
