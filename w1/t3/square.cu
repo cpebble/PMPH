@@ -54,9 +54,19 @@ int main( int argc, char** argv){
   // Run the code on the GPU
   gpu_run(in, gpu_out, N);
 
-  // Print the first 10 and last 10 values to 10p of precision
-  for(int i = 0; i < 10; i++) printf("%6d:\t%.10f\t%.10f\n", i, seq_out[i], gpu_out[i]);
-  for(int i = 0; i < 10; i++) printf("%6d:\t%.10f\t%.10f\n", N-i, seq_out[N-i], gpu_out[N-i]);
+  // Now validate results:
+  int passed = 0;
+  int invalid = 0;
+  for (int i = 0; i < N; ++i) {
+    if (fabs(cpu_out[i] - gpu_out[i]) < 0.0001)
+        passed++;
+    else invalid++;
+  }
+  printf("Passed: %06d, Invalid: %06d\n", passed, invalid);
+
+  //DEBUG: Print the first 10 and last 10 values to 10p of precision
+  //for(int i = 0; i < 10; i++) printf("%6d:\t%.10f\t%.10f\n", i, seq_out[i], gpu_out[i]);
+  //for(int i = 0; i < 10; i++) printf("%6d:\t%.10f\t%.10f\n", N-i, seq_out[N-i], gpu_out[N-i]);
   // Free outpus databases
   free(in); free(gpu_out); free(seq_out);
 
