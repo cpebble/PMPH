@@ -10,7 +10,7 @@ __global__ void squareKernel(float *d_in, float *d_out){
 }
 
 int main( int argc, char** argv){
-  unsigned int N = 32;
+  unsigned int N = 1023;
   unsigned int mem_size = N*sizeof(float);
   // Init host mem
   float* h_in = (float*) malloc(mem_size);
