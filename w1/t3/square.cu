@@ -55,14 +55,23 @@ void gpu_run(float* inp, float* out, int N)
   // Copy result from device to host
   cudaMemcpy(out, d_out, mem_size, cudaMemcpyDeviceToHost);
   cudaFree(d_in); cudaFree(d_out);
-  elapsed timeval_subtract(&t_diff.tv_sec*1e6+t_diff.tv_usec);
+  // Calculate and print time
+  timeval_subtract(&t_diff, &t_end, &t_start);
+  elapsed = (t_diff.tv_sec*1e6+t_diff.tv_usec);
   printf("GPU Run took %d microseconds (%.2fms)\n", elapsed, elapsed / 1000.0);
 }
 
 void seq_run(float* inp, float* out, int N){
+  unsigned long int elapsed; 
+  struct timeval t_start, t_end, t_diff;
+  gettimeofday(&t_start, NULL);
   for(unsigned int i = 0; i < N; ++i){
     out[i] = powf(inp[i]/(inp[i]-2.3), 3);
   }
+  gettimeofday(&t_end, NULL);
+  timeval_subtract(&t_diff, &t_end, &t_start);
+  elapsed = (t_diff.tv_sec*1e6+t_diff.tv_usec);
+  printf("CPU Run took %d microseconds (%.2fms)\n", elapsed, elapsed / 1000.0);
 }
 
 int main( int argc, char** argv){
