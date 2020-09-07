@@ -20,7 +20,7 @@ void gpu_run(float* inp, float* out, int N)
   unsigned int num_blocks = ((N + (block_size - 1)) / block_size);
   float* d_in;
   float* d_out;
-  unsigned_int mem_size = N*sizeof(float);
+  unsigned int mem_size = N*sizeof(float);
   // Cuda pointers calculated behind the scenes
   cudaMalloc((void**)&d_in, mem_size);
   cudaMalloc((void**)&d_out, mem_size);
@@ -41,7 +41,7 @@ int main( int argc, char** argv){
   float* gpu_out = (float*) malloc(mem_size);
   float* seq_out = (float*) malloc(mem_size);
   // And init the input array
-  for (unsigned int i=0; i<N; ++i) h_in[i] = (float)i;
+  for (unsigned int i=0; i<N; ++i) in[i] = (float)i;
 
   // Run the code on the GPU
   gpu_run(in, gpu_out, N);
