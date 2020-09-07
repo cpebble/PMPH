@@ -2,6 +2,8 @@
 #include <string.h>
 #include <math.h>
 #include <cuda_runtime.h>
+#define BLOCK_SIZE 256
+
 
 __global__ void kernel(float *d_in, float *d_out, int N){
   const unsigned int lid = threadIdx.x; // Local id inside a block
@@ -11,36 +13,39 @@ __global__ void kernel(float *d_in, float *d_out, int N){
   }
 }
 
+void gpu_run(float* inp, float* out, N)
+{
+  // Most of this code is stolened from the lab1 slides
+  unsigned int block_size = BLOCK_SIZE;
+  unsigned int num_blocks = ((N + (block_size - 1)) / block_size);
+  float* d_in;
+  float* d_out;
+  // Cuda pointers calculated behind the scenes
+  cudaMalloc((void**)&d_in, N*sizeof(float));
+  cudaMalloc((void**)&d_out, N*sizeof(float));
+  // Copy host mem to device
+  cudaMemcpy(d_in, inp, mem_size, cudaMemcpyHostToDevice);
+  // Exec kernel
+  kernel<<<num_blocks, block_size>>>(d_in, d_out, N);
+  // Copy result from device to host
+  cudaMemcpy(out, d_out, mem_size, cudaMemcpyDeviceToHost);
+  cudaFree(d_in); cudaFree(d_out);
+}
+
 int main( int argc, char** argv){
   unsigned int N = 753411;
   unsigned int mem_size = N*sizeof(float);
-  unsigned int block_size = 256;
-  unsigned int num_blocks = ((N + (block_size - 1)) / block_size);
-  // Init host mem
-  float* h_in = (float*) malloc(mem_size);
-  float* h_out = (float*) malloc(mem_size);
+  // Init memory arrays
+  float* in = (float*) malloc(mem_size);
+  float* gpu_out = (float*) malloc(mem_size);
+  float* seq_out = (float*) malloc(mem_size);
+  // And init the input array
   for (unsigned int i=0; i<N; ++i) h_in[i] = (float)i;
 
-  // Init device mem
-  float* d_in;
-  float* d_out;
-  cudaMalloc((void**)&d_in, mem_size);
-  cudaMalloc((void**)&d_out, mem_size);
-
-  // Copy host mem to device
-  cudaMemcpy(d_in, h_in, mem_size, cudaMemcpyHostToDevice);
-
-  // Exec kernel
-  kernel<<<num_blocks, block_size>>>(d_in, d_out, N);
-
-  // Copy result from device to host
-  cudaMemcpy(h_out, d_out, mem_size, cudaMemcpyDeviceToHost);
-
-  // Print result
-  for(unsigned int i=(N-10); i<N; ++i) printf("%d: %.6f\n", i, h_out[i]);
-
-  free(h_in); free(h_out);
-  cudaFree(d_in); cudaFree(d_out);
+  // Run the code on the GPU
+  gpu_run(in, gpu_out, N);
+  // Free outpus databases
+  free(inp); free(gpu_out); free(seq_out);
 
   return 0;
 }
