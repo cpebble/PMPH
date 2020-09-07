@@ -2,8 +2,23 @@
 #include <string.h>
 #include <math.h>
 #include <cuda_runtime.h>
+#include <sys/time.h>
+#include <time.h>
+
 #define BLOCK_SIZE 256
 
+// Src: Lab1-CudaIntro. Get time difference
+int timeval_subtract( 
+        struct timeval *result,
+        struct timeval *t2,
+        struct timeval *t1)
+{
+  unsigned int resolution = 1000000;
+  long int diff = (t2->tv_usec + resolution * t2->tv_sec) - 
+                  (t1->tv_usec + resolution * t2->tv_sec);
+  result->tv_sec = diff / resolution; result->tv_usec = diff % resolution;
+  return (diff<0);
+}
 
 __global__ void kernel(float *d_in, float *d_out, int N){
   const unsigned int lid = threadIdx.x; // Local id inside a block
@@ -16,21 +31,32 @@ __global__ void kernel(float *d_in, float *d_out, int N){
 void gpu_run(float* inp, float* out, int N)
 {
   // Most of this code is stolened from the lab1 slides
+  // Time tracking vars
+  unsigned long int elapsed; 
+  struct timeval t_start, t_end, t_diff;
+
+  // Block distr vars
   unsigned int block_size = BLOCK_SIZE;
   unsigned int num_blocks = ((N + (block_size - 1)) / block_size);
+
+  // Memory assignment
+  unsigned int mem_size = N*sizeof(float);
   float* d_in;
   float* d_out;
-  unsigned int mem_size = N*sizeof(float);
-  // Cuda pointers calculated behind the scenes
   cudaMalloc((void**)&d_in, mem_size);
   cudaMalloc((void**)&d_out, mem_size);
+
   // Copy host mem to device
   cudaMemcpy(d_in, inp, mem_size, cudaMemcpyHostToDevice);
-  // Exec kernel
+  // Exec kernel(with timetrack)
+  gettimeofday(&t_start, NULL);
   kernel<<<num_blocks, block_size>>>(d_in, d_out, N);
+  gettimeofday(&t_end, NULL);
   // Copy result from device to host
   cudaMemcpy(out, d_out, mem_size, cudaMemcpyDeviceToHost);
   cudaFree(d_in); cudaFree(d_out);
+  elapsed timeval_subtract(&t_diff.tv_sec*1e6+t_diff.tv_usec);
+  printf("GPU Run took %d microseconds (%.2fms)\n", elapsed, elapsed / 1000.0);
 }
 
 void seq_run(float* inp, float* out, int N){
