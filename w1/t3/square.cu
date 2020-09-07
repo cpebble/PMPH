@@ -13,16 +13,17 @@ __global__ void kernel(float *d_in, float *d_out, int N){
   }
 }
 
-void gpu_run(float* inp, float* out, N)
+void gpu_run(float* inp, float* out, int N)
 {
   // Most of this code is stolened from the lab1 slides
   unsigned int block_size = BLOCK_SIZE;
   unsigned int num_blocks = ((N + (block_size - 1)) / block_size);
   float* d_in;
   float* d_out;
+  unsigned_int mem_size = N*sizeof(float);
   // Cuda pointers calculated behind the scenes
-  cudaMalloc((void**)&d_in, N*sizeof(float));
-  cudaMalloc((void**)&d_out, N*sizeof(float));
+  cudaMalloc((void**)&d_in, mem_size);
+  cudaMalloc((void**)&d_out, mem_size);
   // Copy host mem to device
   cudaMemcpy(d_in, inp, mem_size, cudaMemcpyHostToDevice);
   // Exec kernel
@@ -45,7 +46,7 @@ int main( int argc, char** argv){
   // Run the code on the GPU
   gpu_run(in, gpu_out, N);
   // Free outpus databases
-  free(inp); free(gpu_out); free(seq_out);
+  free(in); free(gpu_out); free(seq_out);
 
   return 0;
 }
