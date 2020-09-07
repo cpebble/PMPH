@@ -3,16 +3,16 @@
 #include <math.h>
 #include <cuda_runtime.h>
 
-__global__ void squareKernel(float *d_in, float *d_out, int N){
+__global__ void kernel(float *d_in, float *d_out, int N){
   const unsigned int lid = threadIdx.x; // Local id inside a block
   const unsigned int gid = blockIdx.x*blockDim.x + lid; // global id
   if (gid < N){
-    d_out[gid] = d_in[gid]*d_in[gid]; 
+    d_out[gid] = powf(d_in[gid]/(d_in[gid]-2.3), 3)
   }
 }
 
 int main( int argc, char** argv){
-  unsigned int N = 32757;
+  unsigned int N = 753411;
   unsigned int mem_size = N*sizeof(float);
   unsigned int block_size = 256;
   unsigned int num_blocks = ((N + (block_size - 1)) / block_size);
@@ -31,7 +31,7 @@ int main( int argc, char** argv){
   cudaMemcpy(d_in, h_in, mem_size, cudaMemcpyHostToDevice);
 
   // Exec kernel
-  squareKernel<<<num_blocks, block_size>>>(d_in, d_out, N);
+  kernel<<<num_blocks, block_size>>>(d_in, d_out, N);
 
   // Copy result from device to host
   cudaMemcpy(h_out, d_out, mem_size, cudaMemcpyDeviceToHost);
