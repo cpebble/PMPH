@@ -34,7 +34,7 @@ void gpu_run(float* inp, float* out, int N)
 }
 
 void seq_run(float* inp, float* out, int N){
-  for(unsigned int i = 0; i < N, ++i){
+  for(unsigned int i = 0; i < N; ++i){
     out[i] = powf(inp[i]/(inp[i]-2.3), 3);
   }
 }
