@@ -1,4 +1,4 @@
-
+#+STARTUP: latexpreview
 * Programming massively parralel hardware
 
 * 01/09 Intro lecture
@@ -425,10 +425,77 @@ let inds = map(\(c,iT,iF) ->
 ) (zip3 cs isT isF)
 #+END_SRC
 Hvor cs = =map cond X=  
-Hvor isT= index arr hvis val er True 
-Hvor isF= index arr hvis val er False
+Hvor isT= index arr hvis val er True  
+Hvor isF= index arr hvis val er False  
+
+Så bruger vi =scatter (replicate n 0) inds og_arr= som
+indsætter according til den liste af indices
+
+** Computing prime numbers up to N
+Start with an array of size n filled initially with 1, i e all are primes.
+Iteratively zero out all multiples of numbers up to sqrtjn)  
+**Eratosthenes Sieve**
+#+BEGIN_SRC
+int res[n] o {0,0,1,1,1,...,1}
+for(i o 2; i <= sqrt(n); i++){
+  if ( res[i] != 0) {
+    forall m in multiples of i <= n do{
+      res[m] = 0; // kan implementeres som scatter
+    }
+  }
+}
+#+END_SRC
+Work: O(n lg lg n) but Depth: O(sqrt(n))
+
+*** Bedre løsning
+Hvis vi har alle primer fra 2 til sqrt(n) så kan vi generere alle multiples
+af disse primes på en gang ={2*p:n:p]: p in sqr_primes}=.
+
+Vi kan så kalde recursivt på n -> sqrt(n) -> sqrt(sqrt(n))
+ indtil vi rammer et base-case.
+
+** Flattening
+Why flattening?  
+- GPU Hardware doesn't support recursion efficiently.  
+- We split onto a grid of blocks
+- A way to map arbitrary functions to flat hardware
 
 
+Simple and incomplete recipe
+1. Normalize the program
+2. Start distributing outer-maps across its containing let-
+3. Whenever the body of the map is exactly a map or a reduce
+   or a scan, iota, replicate etc. Apply the corresponding re-write rule
+
+*** Simple example
+
+#+BEGIN_SRC
+let arr = [1, 2, 3, 4] in
+map (\i -> map (+(i+1)) (iota i)) arr
+-- Result: [[2],[3,4],[4,5,6],[5,6,7,8]]
+#+END_SRC
+1. Normalise the code
+#+BEGIN_SRC
+let arr = [1, 2, 3, 4] in
+map (\i ->
+    let ip1 = i+1 in
+    let iot = iota i in
+    let ip1r= (replicate i ip1) in
+    map2 (+) ip1r iot ... ) arr
+
+-- Result: [[2],[3,4],[4,5,6],[5,6,7,8]]
+#+END_SRC
+2. Distribute the map over every inst
+$F$ Denote the flattening tranf and modifies the input
+#+BEGIN_SRC
+F(map ...) ===
+1. let ip1s = map(\i -> i+1) arr in
+2. let iots = F(map(\i -> (iota i)) arr)
+3. let ip1rs= F(map2 (\i ip1 -> (replicate i ip1)) arr ip1s)
+4. in F(map2 (\ip1r iot -> map2 (+) ip1r iot)ip1rs iots)
+#+END_SRC
+i 1 er den allerede map over sekventielt  
+i 2 kan vi omskrive (iota i) og gøre den flad
 
 
 
