@@ -355,6 +355,86 @@ for a PRAM
 A work-Time algorithm of Depth D(n) and work W(n) can be simulated on a P-processor PRAM in time complex T  
 $$ \frac{W(n)}{P} \leq T < \frac{W(n)}{P} + D(n) $$
 
+** Futhark functions
+*** Map2
+#+BEGIN_SRC
+map2: (a -> a -> b) -> [a] -> [a] -> b
+map2: O [a_1,...,a_n] [b_1,...,b_n] = [a_1 O b_1, ..., a_n O b_n]
+#+END_SRC
+
+*** Filter
+#+BEGIN_SRC
+pred = odd x = (x % 2) == 1
+filter odd [3,6,8,7,10]
+> [3,7]
+#+END_SRC
+
+*** Scatter
+A parallel write operater
+Scarer updates in parallel a base array with a set of values
+
+/NB: To support in-place updates, we use * to define a "mutable" function/
+#+BEGIN_SRC
+scatter: *[m]a -> [n]int -> [n]a -> *[m]a
+
+X (input array)  = [a0, a1, a2, a3, a4, a5]
+I (index vector) = [ 2, 4, 1,-1]
+A (data vector)  = [b0,b1,b2,b3]
+scatter X I A    = [a0, b2, b0, a3, b1, a5]
+#+END_SRC
+When index is out of bounds, the input is ignored
+
+Scatter can be used to update out of order. If Index 
+vector is iota, then it is equivalent to a map.
+
+Scatter has D(n) = O(1) and W(n) = O(n)  
+Array X is consumed by scatter, and can't be used afterwards
+
+*** Permute, split, replicate, iota
+Operator to permute in parallel based on a set of indixes
+TODO
+
+*** Partition2/Filter
+#+BEGIN_SRC
+partition2 : (a->Bool) -> [n]a -> (i32, [n]a)
+#+END_SRC
+In result, the elements satisfying the predicate occur before the others 
+Can be implemented by means of map, scan and scatter
+
+Vi tænker at starte med filter
+#+BEGIN_SRC
+odd [1,4,6,7,10,11]
+> [1,7,11,4,6,10]
+EG Index rykker sig til
+[0->0,1->3,2->4,3->1,4->5,5->2]
+
+Første trin er 
+map pred arr: [1,0,0,1,0,1](alle der matcher pred)
+Andet er
+exclusive_scan + 
+: [0,1,1,1,2,2] (now 0 1 and 2 are in the right pos)
+scatter
+#+END_SRC
+Vi kører de første to trin igen, nu med inverted predicate,
+og adder offset(antal sande elementer) til resultatet  
+
+Vi zipper de to index arrays, og mapper over functionen:
+#+BEGIN_SRC
+let inds = map(\(c,iT,iF) ->
+    if c then iT-1 else iF-1
+) (zip3 cs isT isF)
+#+END_SRC
+Hvor cs = =map cond X=  
+Hvor isT= index arr hvis val er True 
+Hvor isF= index arr hvis val er False
+
+
+
+
+
+
+#+BEGIN_SRC
+#+END_SRC
 * [lab] 03/09 Cuda intro
   <2020-09-03 Thu>
 Don't initially install on personal computer(Du har 1080 derhjemme)  
@@ -459,3 +539,4 @@ unsigned int num_blocks = ((N+(block_size-1) / block_size);
 squarekernel<<< num_blocks, block_size>>>(d_in,d_out,N)
 #+END_SRC
 And this will be the basis for the first assignment
+* 08/09
