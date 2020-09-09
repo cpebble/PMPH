@@ -1,25 +1,25 @@
 -- Parallel Longest Satisfying Segment
 --
 -- ==
--- compiled input {
+-- compiled nobench input {
 --    [1, -2, -2, 0, 0, 0, 0, 0, 3, 4, -6, 1]
 -- }
 -- output {
 --    5
 -- }
--- compiled input {
+-- compiled nobench input {
 --    [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, -6, 1, 1, 3, 1]
 -- }
 -- output {
 --    7
 -- }
--- compiled input {
+-- compiled nobench input {
 --    [3, 4, 4, 4, 3]
 -- }
 -- output {
 --    3
 -- }
--- compiled input @ test.in auto output
+-- compiled random input {[100000]i32} auto output
 
 import "lssp"
 import "lssp-seq"
