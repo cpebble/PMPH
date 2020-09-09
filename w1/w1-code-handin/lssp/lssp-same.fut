@@ -13,6 +13,12 @@
 -- output {
 --    7
 -- }
+-- compiled input {
+--    [3, 4, 4, 4, 3]
+-- }
+-- output {
+--    3
+-- }
 
 import "lssp"
 import "lssp-seq"
