@@ -19,6 +19,7 @@
 -- output {
 --    3
 -- }
+-- compiled input @ test.in auto output
 
 import "lssp"
 import "lssp-seq"
