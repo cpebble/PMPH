@@ -18,7 +18,7 @@ let redOp (pred2 : int -> int -> bool)
   let (lssx, lisx, lcsx, tlx, firstx, lastx) = x
   let (lssy, lisy, lcsy, tly, firsty, lasty) = y
 
-  let connect= pred2 lastx firsty || (lastx == true) || (firsty == true)
+  let connect= pred2 lastx firsty || (tlx == 0) || (tly == 0)
   -- Length of connecting segment
   let connecting_l = if connect then lcsx + lisy else 0 
   let newlss = max (lssx, max (lssy, connecting_l))
