@@ -71,7 +71,7 @@ void seq_run(float* inp, float* out, int N){
   struct timeval t_start, t_end, t_diff;
   gettimeofday(&t_start, NULL);
   for(unsigned int i = 0; i < N; ++i){
-    out[i] = pow(inp[i]/(inp[i]-2.3), 3);
+    out[i] = powf(inp[i]/(inp[i]-2.3), 3);
   }
   gettimeofday(&t_end, NULL);
   timeval_subtract(&t_diff, &t_end, &t_start);
