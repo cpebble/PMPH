@@ -7,6 +7,7 @@
 --   [2.0f32, 1.0, 0.0, 3.0]
 -- } 
 -- output { [3.0f32, 0.0f32, -4.0f32, 6.0f32, 9.0f32] }
+-- compiled input @ data.in auto output
 
 ------------------------
 --- Sgm Scan Helpers ---
