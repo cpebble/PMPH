@@ -96,7 +96,7 @@ let sgmSumF32 [n] (flg : [n]i32) (arr : [n]f32) : [n]f32 =
 let spMatVctMult [num_elms] [vct_len] [num_rows] 
                  (mat_val : [num_elms](i32,f32))
                  (mat_shp : [num_rows]i32)
-                 (vct : [vct_len]f32) : [num_rows]f32 =
+                 (vct : [vct_len]f32) = --: [num_rows]f32 =
 
   let shp_sc   = scan (+) 0 mat_shp
   let shp_rot  = map (\i -> if i == 0 then 0 else shp_sc[i-1]) (iota num_rows)
