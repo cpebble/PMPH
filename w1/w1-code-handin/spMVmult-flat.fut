@@ -101,7 +101,7 @@ let spMatVctMult [num_elms] [vct_len] [num_rows]
   let shp_sc   = scan (+) 0 mat_shp
   let shp_rot  = map (\i -> if i == 0 then 0 else shp_sc[i-1]) (iota num_rows)
   -- [0,2,5,8,10]
-  let row_flg  = scatter (replicate num_elms 0) 
+  let row_flg  = scatter (replicate num_elms 0) mat_shp shp_rot
   let muls = map (\(i, x) -> x*vct[i]) mat_val
   in (row_flg, muls)
   --in replicate num_rows 0.0f32
