@@ -105,10 +105,6 @@ let spMatVctMult [num_elms] [vct_len] [num_rows]
   let muls = map (\(i, x) -> x*vct[i]) mat_val
   let row_sums = sgmSumF32 row_flg muls
   in map (\i -> row_sums[i-1]) shp_sc
-  -- let shp_sc_decr = map (\i -> i - 1) shp_sc
-  -- let scatter_inds = scatter (replicate num_elms (-1)) shp_sc_decr (iota num_rows)
-  -- let scattered = scatter (replicate num_rows 0.0f32) scatter_inds row_sums
-  -- in scattered
 
 -- $ futhark dataset --i32-bounds=0:9999 -g [1000000]i32 --f32-bounds=-7.0:7.0 -g [1000000]f32 --i32-bounds=100:100 -g [10000]i32 --f32-bounds=-10.0:10.0 -g [10000]f32 | ./spMVmult-seq -t /dev/stderr > /dev/null
 let main [n] [m] 
