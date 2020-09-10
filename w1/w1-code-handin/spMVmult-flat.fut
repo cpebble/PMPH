@@ -96,42 +96,22 @@ let sgmSumF32 [n] (flg : [n]i32) (arr : [n]f32) : [n]f32 =
 let spMatVctMult [num_elms] [vct_len] [num_rows] 
                  (mat_val : [num_elms](i32,f32))
                  (mat_shp : [num_rows]i32)
-                 (vct : [vct_len]f32) = --: [num_rows]f32 =
+                 (vct : [vct_len]f32) : [num_rows]f32 =
 
   let shp_sc   = scan (+) 0 mat_shp
-  -- [2, 5, 8, 10, 11]
   let shp_rot  = map (\i -> if i == 0 then 0 else shp_sc[i-1]) (iota num_rows)
-  -- [0,2,5,8,10]
   let inds = iota num_rows
   let flags = map (\i -> i+1) inds
   let row_flg  = scatter (replicate num_elms 0) shp_rot flags
-  -- [0, 10, 8, 5, 0, 0, 0, 0]
   let muls = map (\(i, x) -> x*vct[i]) mat_val
-  -- [4.0f32, -2.0f32, -2.0f32, 4.0f32, -2.0f32, -2.0f32, 4.0f32, -2.0f32, -2.0f32, 4.0f32, 6.0f32]
   let row_sums = sgmSumF32 row_flg muls
-  let row_flg_decr = map (\el -> el - 1) row_flg
   let shp_sc_decr = map (\i -> i - 1) shp_sc
   let scatter_inds = scatter (replicate num_elms (-1)) shp_sc_decr (iota num_rows)
   let scattered = scatter (replicate num_rows 0.0f32) scatter_inds row_sums
-  in (row_flg, muls, row_sums, scatter_inds, scattered)
-  --in replicate num_rows 0.0f32
-  -- ... continue here ...
-  -- Flatten the datasets
-  
--- [1i32, 0i32, 2i32, 0i32, 0i32, 3i32, 0i32, 0i32, 4i32, 0i32, 5i32]
--- [4.f32, -1.f32, -2.f32, 2.f32, -0.f32, -1.f32, 0.f32, -3.f32, -0.f32, 6.f32, 9.f32]
--- [4.f32, 3.f32, -2.f32, 0.f32, 0.f32, -1.f32, -1.f32, -4.f32, -0.f32, 6.f32, 9.f32]
--- [4.f32, -2.f32, -1.f32, -0.f32, 9.f32]
--- output { [3.0f32, 0.0f32, -4.0f32, 6.0f32, 9.0f32] }
--- Jeg hiver det første element og ikke det sidste :'( 
---   [2, 3, 3, 2, 1]
--- min inds     = 0 2 5 8 10
--- Rigtig inds  = 1 4 7 9 10
--- Rigtig inds+1= 2 5 8 10 11
--- scan shp     = 2 5 8 10 11
--- One may run with for example:
+  in scattered
+
 -- $ futhark dataset --i32-bounds=0:9999 -g [1000000]i32 --f32-bounds=-7.0:7.0 -g [1000000]f32 --i32-bounds=100:100 -g [10000]i32 --f32-bounds=-10.0:10.0 -g [10000]f32 | ./spMVmult-seq -t /dev/stderr > /dev/null
 let main [n] [m] 
          (mat_inds : [n]i32) (mat_vals : [n]f32) 
-         (shp : [m]i32) (vct : []f32) = --: [m]f32 =
+         (shp : [m]i32) (vct : []f32) : [m]f32 =
   spMatVctMult (zip mat_inds mat_vals) shp vct
