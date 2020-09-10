@@ -110,8 +110,9 @@ let spMatVctMult [num_elms] [vct_len] [num_rows]
   -- [4.0f32, -2.0f32, -2.0f32, 4.0f32, -2.0f32, -2.0f32, 4.0f32, -2.0f32, -2.0f32, 4.0f32, 6.0f32]
   let row_sums = sgmSumF32 row_flg muls
   let row_flg_decr = map (\el -> el - 1) row_flg
-  let scattered = scatter (replicate num_rows 0.0f32) (scatter (replicate num_elms (-1)) inds shp_sc) muls
-  in (row_flg, muls, row_sums, scattered)
+  let scatter_inds = scatter (replicate num_elms (-1)) shp_sc (iota num_rows)
+  let scattered = scatter (replicate num_rows 0.0f32) scatter_inds muls
+  in (row_flg, muls, row_sums, scatter_inds, scattered)
   --in replicate num_rows 0.0f32
   -- ... continue here ...
   -- Flatten the datasets
@@ -127,9 +128,6 @@ let spMatVctMult [num_elms] [vct_len] [num_rows]
 -- Rigtig inds  = 1 4 7 9 10
 -- Rigtig inds+1= 2 5 8 10 11
 -- scan shp     = 2 5 8 10 11
-
-
-
 -- One may run with for example:
 -- $ futhark dataset --i32-bounds=0:9999 -g [1000000]i32 --f32-bounds=-7.0:7.0 -g [1000000]f32 --i32-bounds=100:100 -g [10000]i32 --f32-bounds=-10.0:10.0 -g [10000]f32 | ./spMVmult-seq -t /dev/stderr > /dev/null
 let main [n] [m] 
