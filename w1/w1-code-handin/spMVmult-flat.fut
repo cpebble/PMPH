@@ -114,5 +114,5 @@ let spMatVctMult [num_elms] [vct_len] [num_rows]
 -- $ futhark dataset --i32-bounds=0:9999 -g [1000000]i32 --f32-bounds=-7.0:7.0 -g [1000000]f32 --i32-bounds=100:100 -g [10000]i32 --f32-bounds=-10.0:10.0 -g [10000]f32 | ./spMVmult-seq -t /dev/stderr > /dev/null
 let main [n] [m] 
          (mat_inds : [n]i32) (mat_vals : [n]f32) 
-         (shp : [m]i32) (vct : []f32) : [m]f32 =
+         (shp : [m]i32) (vct : []f32) = --: [m]f32 =
   spMatVctMult (zip mat_inds mat_vals) shp vct
