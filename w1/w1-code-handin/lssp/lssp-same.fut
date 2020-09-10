@@ -19,7 +19,7 @@
 -- output {
 --    3
 -- }
--- compiled random input {[100000]i32} auto output
+-- compiled input @ data.in auto output
 
 import "lssp"
 import "lssp-seq"

@@ -229,11 +229,11 @@ when we finally flatten, we reduce only the already reduced list
 
 
 ** Maximum Segment Sum Problem
-A non-homomorphjic function g can sometimes be lifted to a homomorphic one /f/
+A non-homeomorphjic function g can sometimes be lifted to a homomorphic one /f/
 by computing a baggage of extra info
 
 The initial function can be obtained by projecting the homomorphic result: 
-/g = \pi . f/
+$g = \pi . f$
 
 MSSP:  
 Given a list of integers, find the contiguous segment of the list whose members have 
