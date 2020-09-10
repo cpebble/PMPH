@@ -109,13 +109,24 @@ let spMatVctMult [num_elms] [vct_len] [num_rows]
   -- [4.0f32, -2.0f32, -2.0f32, 4.0f32, -2.0f32, -2.0f32, 4.0f32, -2.0f32, -2.0f32, 4.0f32, 6.0f32]
   let row_sums = sgmSumF32 row_flg muls
   let row_flg_decr = map (\el -> el - 1) row_flg
-  let scattered = scatter (replicate num_rows 0.0f32) row_flg_decr muls
+  let scattered = scatter (replicate num_rows 0.0f32) shp_sc muls
   in (row_flg, muls, row_sums, scattered)
   --in replicate num_rows 0.0f32
   -- ... continue here ...
   -- Flatten the datasets
   
-  
+-- [1i32, 0i32, 2i32, 0i32, 0i32, 3i32, 0i32, 0i32, 4i32, 0i32, 5i32]
+-- [4.f32, -1.f32, -2.f32, 2.f32, -0.f32, -1.f32, 0.f32, -3.f32, -0.f32, 6.f32, 9.f32]
+-- [4.f32, 3.f32, -2.f32, 0.f32, 0.f32, -1.f32, -1.f32, -4.f32, -0.f32, 6.f32, 9.f32]
+-- [4.f32, -2.f32, -1.f32, -0.f32, 9.f32]
+-- output { [3.0f32, 0.0f32, -4.0f32, 6.0f32, 9.0f32] }
+-- Jeg hiver det første element og ikke det sidste :'( 
+--   [2, 3, 3, 2, 1]
+-- min inds     = 0 2 5 8 10
+-- Rigtig inds  = 1 4 7 9 10
+-- Rigtig inds+1= 2 5 8 10 11
+-- scan shp     = 2 5 8 10 11
+
 
 
 -- One may run with for example:
