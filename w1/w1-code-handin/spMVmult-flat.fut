@@ -110,7 +110,7 @@ let spMatVctMult [num_elms] [vct_len] [num_rows]
   -- [4.0f32, -2.0f32, -2.0f32, 4.0f32, -2.0f32, -2.0f32, 4.0f32, -2.0f32, -2.0f32, 4.0f32, 6.0f32]
   let row_sums = sgmSumF32 row_flg muls
   let row_flg_decr = map (\el -> el - 1) row_flg
-  let scattered = scatter (replicate num_rows 0.0f32) (scatter (replicate num_elms -1) inds shp_sc) muls
+  let scattered = scatter (replicate num_rows 0.0f32) (scatter (replicate num_elms (-1)) inds shp_sc) muls
   in (row_flg, muls, row_sums, scattered)
   --in replicate num_rows 0.0f32
   -- ... continue here ...
