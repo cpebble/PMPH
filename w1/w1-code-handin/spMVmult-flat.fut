@@ -101,13 +101,15 @@ let spMatVctMult [num_elms] [vct_len] [num_rows]
   let shp_sc   = scan (+) 0 mat_shp
   let shp_rot  = map (\i -> if i == 0 then 0 else shp_sc[i-1]) (iota num_rows)
   -- [0,2,5,8,10]
-  let flags = map (\i -> i+1) (iota num_rows)
+  let inds = iota num_rows
+  let flags = map (\i -> i+1) inds
   let row_flg  = scatter (replicate num_elms 0) shp_rot flags
   -- [0, 10, 8, 5, 0, 0, 0, 0]
   let muls = map (\(i, x) -> x*vct[i]) mat_val
   -- [4.0f32, -2.0f32, -2.0f32, 4.0f32, -2.0f32, -2.0f32, 4.0f32, -2.0f32, -2.0f32, 4.0f32, 6.0f32]
-  -- 
-  in (row_flg, muls)
+  let row_sums = sgmSumF32 row_flg muls
+  let scattered = scatter (replicate num_rows 0.0f32) inds muls
+  in (row_flg, muls, row_sums, scattered)
   --in replicate num_rows 0.0f32
   -- ... continue here ...
   -- Flatten the datasets
