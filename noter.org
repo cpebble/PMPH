@@ -229,11 +229,11 @@ when we finally flatten, we reduce only the already reduced list
 
 
 ** Maximum Segment Sum Problem
-A non-homomorphjic function g can sometimes be lifted to a homomorphic one /f/
+A non-homeomorphjic function g can sometimes be lifted to a homomorphic one /f/
 by computing a baggage of extra info
 
 The initial function can be obtained by projecting the homomorphic result: 
-/g = \pi . f/
+$g = \pi . f$
 
 MSSP:  
 Given a list of integers, find the contiguous segment of the list whose members have 
@@ -606,3 +606,106 @@ i 2 kan vi omskrive (iota i) og gøre den flad
 
 #+BEGIN_SRC
 #+END_SRC
+* [lab 10/09] Cuda scan and reduce
+In Cuda, we split the job into block. Each block gets implemented into a
+"streaming multiprocessor" SM with various stuff like shared memory
+
+- A block contains many threads
+- A block /can't/ run on more than one SM
+- Threads in a block can cooperate
+- Threads on the same SM /can't/ cooperate
+  The hardware allows this, however the software doesn't allow these to cooperate. We
+have no way to guarantee which blocks run on which SMs
+- The programmer /can't/ specify the order two blocks of the same kernel will run
+- The programmer can specify the order two block with different kernels will run
+
+** Synchronization
+Collaborate in block using shared mem
+#+BEGIN_SRC c
+__global__ void kernelCall(){
+    extern __shared__ int sharedArr
+}
+...
+kernelCall<<<blocks, threads, shared_mem_size>>>(...)
+#+END_SRC
+
+I assume we want to shift every element of an array left by one
+#+BEGIN_SRC c
+__global__ void shiftLeftkernel(float *d_in, float *d_out){
+  extern __shared__ float s_arr[];
+  s_arr[tid] = d_in[tid];
+  s_arr[tid] = s_arr[tid+1];
+  d_out[tid] = s_arr[tid];
+
+}
+#+END_SRC
+With an "obvious" bug
+
+#+BEGIN_SRC c
+__global__ void shiftLeftkernel(float *d_in, float *d_out){
+  extern __shared__ float s_arr[];
+  // S_arr[tid] might be already written by another thread
+  s_arr[tid] = d_in[tid];    // These 
+  // We might overwrite something
+  s_arr[tid] = s_arr[tid+1]; // Two lines
+  // s_arr[tid] might not be set
+
+  d_out[tid] = s_arr[tid];
+}
+#+END_SRC
+The solution: 
+#+BEGIN_SRC c
+__global__ void shiftLeftkernel(float *d_in, float *d_out){
+  extern __shared__ float s_arr[];
+  s_arr[tid] = d_in[tid];    // These 
+  __syncthreads(); // Stop here
+  float newval = s_arr[(tid + 1) % blockDim.x];
+  __syncthreads(); // stop here
+  s_arr[tid] = newval;
+  // Now move data out to global memory
+  d_out[tid] = s_arr[tid];
+}
+#+END_SRC
+We have now put a barrier into the code, between the read and the write
+
+** Fundamental algorithms in parallel
+*** Reduce
+- Input: List of elements, an associative binop on elements, and identity element
+- Output: Scalar value of same type as element
+
+One parallel red
+#+BEGIN_SRC c++
+__global__ void reduceParallel_sum(){
+    for(int s=blockDim.x / 2; s > 0; s /=2){
+        if (blockThreadId<s){
+	    d_in[threadId] += d_in[threadId+s];
+	}
+	__syncthreads();
+    }
+}
+
+#+END_SRC
+
+Parallel reduce with shared mem
+#+BEGIN_SRC c++
+    extern __shared__ float s_data[];
+    const unsigned int tid = threadIdx.x;
+
+
+TODO
+
+#+END_SRC
+
+*** Exclusive scan
+- Input: List of elements, bin assoc op, neut el
+- List where each element is the reduction of all previous elements
+
+We implement it in two sweeps. Blelloch scan
+
+*** A note on shared mem
+/When using shared mem we have about 48k of shared mem./  
+/It is as fast as a register, but very limited in size/
+
+To perform the exclusive scan across each block we perform excls scan on every block
+then we get a list of reductions over each block(get the last element) and map that
+to every scan

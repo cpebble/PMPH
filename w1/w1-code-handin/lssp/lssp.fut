@@ -18,11 +18,13 @@ let redOp (pred2 : int -> int -> bool)
   let (lssx, lisx, lcsx, tlx, firstx, lastx) = x
   let (lssy, lisy, lcsy, tly, firsty, lasty) = y
 
-  let connect= ...
-  let newlss = ...
-  let newlis = ...
-  let newlcs = ...
-  let newtl  = ...
+  let connect= pred2 lastx firsty || (tlx == 0) || (tly == 0)
+  -- Length of connecting segment
+  let connecting_l = if connect then lcsx + lisy else 0 
+  let newlss = max (lssx, max (lssy, connecting_l))
+  let newlis = if connect && lisx == tlx then tlx + lisy else lisx
+  let newlcs = if connect && lcsy == tly then tly + lcsx else lcsy
+  let newtl  = tlx + tly
   let first  = if tlx == 0 then firsty else firstx
   let last   = if tly == 0 then lastx else lasty in
   (newlss, newlis, newlcs, newtl, first, last)

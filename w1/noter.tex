@@ -1,57 +1,91 @@
-* Task 1
-** Subtask 1
+% Created 2020-09-10 Thu 22:54
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{grffile}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\date{\today}
+\title{}
+\hypersetup{
+ pdfauthor={},
+ pdftitle={},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 27.1 (Org mode 9.3)}, 
+ pdflang={English}}
+\begin{document}
+
+\tableofcontents
+
+\section{Task 1}
+\label{sec:org95b2583}
+\subsection{Subtask 1}
+\label{sec:orga1948f9}
 For subtask 1 we look at the following list homomorphism:
-#+BEGIN_SRC 
+\begin{verbatim}
 h []  = e
 h [a] = f a
 h (x ++ y) = (h x) o (h y)
-#+END_SRC
-*** Proving associativity 
-I aim to prove that for any =[a,b,c]= in =Img(h)= the following holds: =(a o b) o c = a o (b o c)= 
+\end{verbatim}
+\subsubsection{Proving associativity}
+\label{sec:org17fa34f}
+I aim to prove that for any \texttt{[a,b,c]} in \texttt{Img(h)} the following holds: \texttt{(a o b) o c = a o (b o c)} 
 
-I pick =(x,y,z)= and such that =(h x) = a, (h y) = b, (h z) = c= 
+I pick \texttt{(x,y,z)} and such that \texttt{(h x) = a, (h y) = b, (h z) = c} 
 I look at the third statement and state:
-#+BEGIN_SRC 
+\begin{verbatim}
 h( (h (x .. y) .. h(z)) = (h(x) o (h y)) o (h z) = (a o b) o c
-#+END_SRC
+\end{verbatim}
 Then i calculate it in "reverse" and say
-#+BEGIN_SRC 
+\begin{verbatim}
 h x .. (h (y .. z)) = h(x) o (h(y) o h(z)) = a o (b o c)
-#+END_SRC
-Furthermore we know that however we split our input lists =(x .. (y .. x)= or =((x .. y) .. z=, our
+\end{verbatim}
+Furthermore we know that however we split our input lists \texttt{(x .. (y .. x)} or \texttt{((x .. y) .. z}, our
 program gives the same result (e.g. it is a well-defined homomorphism). Therefore it is valid to say
-#+BEGIN_SRC 
+\begin{verbatim}
 h (h (x ++ y) ++ z) = h( x ++ (h y ++ h z))
 =>
 (a o b) o c = a o (b o c)
-#+END_SRC
+\end{verbatim}
 
-*** Proving the neutral element
-I then want to prove that for all =b= in =Img(h)=, =b o e = e o b = b=  
+\subsubsection{Proving the neutral element}
+\label{sec:org0228c9c}
+I then want to prove that for all \texttt{b} in \texttt{Img(h)}, \texttt{b o e = e o b = b}  
 
-For every =b in Img(h)= there exists an a in =A= s.t. =h(a) = b=
+For every \texttt{b in Img(h)} there exists an a in \texttt{A} s.t. \texttt{h(a) = b}
 We have from the assignment text(and the definition of a LH) that
-#+BEGIN_SRC 
+\begin{verbatim}
 h([a]) = h([] ++ [a]) = h([a] ++ [])
 => 
 h (a) = h ([]) o h (a) = h(a) o h ([])
 =>(knowing h [] = e)
 b = b o e = e o b
-#+END_SRC
+\end{verbatim}
 
-** Subtask 2
+\subsection{Subtask 2}
+\label{sec:org33e661e}
 I want to prove the following invariant:
-#+BEGIN_SRC 
+\begin{verbatim}
 (reduce (+) 0) . (map f)
-            ==
+	    ==
 (reduce (+) 0) . (map ( (reduce (+) 0) . (map f) ) ) . distr_p
-#+END_SRC
-We know that for a list =x= it holds:
-#+BEGIN_SRC 
+\end{verbatim}
+We know that for a list \texttt{x} it holds:
+\begin{verbatim}
 reduce (..) [] distr_p x == x
-#+END_SRC
+\end{verbatim}
 And we can use this on the lhs of the invariant, and draw the following conclusion
-#+BEGIN_SRC 
+\begin{verbatim}
 (reduce (+) 0) . (map f)
 =>
 (reduce (+) 0) . (map f) . (reduce (..) []) distr_p
@@ -59,25 +93,29 @@ And we can use this on the lhs of the invariant, and draw the following conclusi
 (reduce (+) 0) . (map(reduce(+)0)) . map(map f)) . distr_p
 => (1st promotion lemma)
 (reduce (+) 0) . (map ( (reduce (+) 0) . (map f) ) ) . distr_p
-#+END_SRC
+\end{verbatim}
 
-* Task 2 
+\section{Task 2}
+\label{sec:org9b3cc5e}
 We write the parallel version of the longest segment by implementing according to the lecture notes.  
 More in-depth; We calculate the LSS and the following extra baggage:
-1. LSS: The current longest segment, which is defined as =max(max(lssx, lssy), connecting_length)=
-   where the connecting length is (lcsx + lisy) if and only if there is a connection across
-   boundaries
-2. LIS: Longest initial segment, which differs from MIS by only being applicable if =lisx= spans the
-   whole x segment. This is the expanded expression: =if connect && lisx ==tlx then tlx + lisy else lisx=
-3. LCS: Longest Concluding segment, which differs in the same way, and is computed much the same (with
-   the exception of checking against tly instead)
-4. TL: The total length is the sum of the subsegments total length, e.g. =tlx + tly=
-5. First: First is firstx(unless x is the neutral element, in which case we get firsty)
-6. Last: Much like first, last is =lasty= unless y is the neutral element.
+\begin{enumerate}
+\item LSS: The current longest segment, which is defined as \texttt{max(max(lssx, lssy), connecting\_length)}
+where the connecting length is (lcsx + lisy) if and only if there is a connection across
+boundaries
+\item LIS: Longest initial segment, which differs from MIS by only being applicable if \texttt{lisx} spans the
+whole x segment. This is the expanded expression: \texttt{if connect \&\& lisx ==tlx then tlx + lisy else lisx}
+\item LCS: Longest Concluding segment, which differs in the same way, and is computed much the same (with
+the exception of checking against tly instead)
+\item TL: The total length is the sum of the subsegments total length, e.g. \texttt{tlx + tly}
+\item First: First is firstx(unless x is the neutral element, in which case we get firsty)
+\item Last: Much like first, last is \texttt{lasty} unless y is the neutral element.
+\end{enumerate}
 
-** Speedups
+\subsection{Speedups}
+\label{sec:org36c3c6f}
 I now test the runtime difference between a sequential c compilation, and an opencl compilation:
-#+BEGIN_SRC sh
+\begin{verbatim}
 [wbr220@a00333 lssp]$ futhark dataset --i32-bounds=-10:10 -b -g [10000000]i32 > data.in
 [wbr220@a00333 lssp]$ futhark c -o lssp-sorted-c lssp-sorted.fut
 [wbr220@a00333 lssp]$ futhark opencl -o lssp-sorted-opencl lssp-sorted.fut
@@ -105,33 +143,34 @@ I now test the runtime difference between a sequential c compilation, and an ope
 743
 737
 -- Avg: 737
-#+END_SRC
-And we see a 97% speedup on average
+\end{verbatim}
+And we see a 97\% speedup on average
 
-* Task 3
-I wrote the code, included in =wa1-task3.cu=, in Cuda c++. The code includes the requested
-GPU parallel in the =gpu_run(float* inp, float* out, int N)= function, that takes two
+\section{Task 3}
+\label{sec:org8862fb8}
+I wrote the code, included in \texttt{wa1-task3.cu}, in Cuda c++. The code includes the requested
+GPU parallel in the \texttt{gpu\_run(float* inp, float* out, int N)} function, that takes two
 allocated arrays of memory, designed for the input and output. It's sequential equivalent
-=seq_run(float* inp, float* out, int N)= has the same signature.  
+\texttt{seq\_run(float* inp, float* out, int N)} has the same signature.  
 
 When running, the functions output their runtime in microseconds. Compiling the program
-with =nvcc -O3 -DN_ELEMS=753411 wa1-task3.cu= i get the following output:
-#+BEGIN_SRC bash
+with \texttt{nvcc -O3 -DN\_ELEMS=753411 wa1-task3.cu} i get the following output:
+\begin{verbatim}
 [wbr220@a00333 t3]$ ./a.out
 CPU Run took 53609 microseconds (53.61ms)
 GPU Run took 33 microseconds (0.03ms)
 Passed: 753411, Invalid: 000000
-#+END_SRC
-Which clearly demonstrates the effectiveness of parallel programming. The GPU Runs 99.9%
+\end{verbatim}
+Which clearly demonstrates the effectiveness of parallel programming. The GPU Runs 99.9\%
 faster than the CPU, outside of the time it takes to move the data to and from the device.
 This speedup is mostly explained by the GPU computing the results in blocks of 256 at a
 time.
 
 We are interested in locating the spot where the GPU computes faster than the CPU. To
-help us, the compiler takes a directive: N_ELEMS, which defines amount of elements. To
+help us, the compiler takes a directive: N\textsubscript{ELEMS}, which defines amount of elements. To
 find the point i continually recompile the program while changing this amount, and log the
 time values
-#+BEGIN_SRC bash
+\begin{verbatim}
 [wbr220@a00333 t3]$ ./test.sh
 Compiling test 1
 TEST 1
@@ -163,27 +202,28 @@ TEST 1000
 CPU Run took 93 microseconds (0.09ms)
 GPU Run took 30 microseconds (0.03ms)
 Passed: 001000, Invalid: 000000
-#+END_SRC
+\end{verbatim}
 
 We now clearly see that for an array of a size arond 250 the CPU starts being slower than
-the GPU, and by $n = 1000$ the GPU is more than 3 times as fast as the CPU
+the GPU, and by \(n = 1000\) the GPU is more than 3 times as fast as the CPU
 
-* Task 4
+\section{Task 4}
+\label{sec:org1fe6cd4}
 We need to flatten the following function:
-#+BEGIN_SRC haskell
+\begin{verbatim}
 map (\ row ->                             
-        let prods =                       
-              map (\(i,x) -> x*vct[i]) row
-        in  reduce (+) 0 prods            
+	let prods =                       
+	      map (\(i,x) -> x*vct[i]) row
+	in  reduce (+) 0 prods            
     ) mat                                 
-#+END_SRC
+\end{verbatim}
 
 I wrote the following futhark function:
-#+BEGIN_SRC futhark
+\begin{verbatim}
 let spMatVctMult [num_elms] [vct_len] [num_rows] 
-                 (mat_val : [num_elms](i32,f32))
-                 (mat_shp : [num_rows]i32)
-                 (vct : [vct_len]f32) : [num_rows]f32 =
+		 (mat_val : [num_elms](i32,f32))
+		 (mat_shp : [num_rows]i32)
+		 (vct : [vct_len]f32) : [num_rows]f32 =
   -- Calculates the index of the start of each sub-array(1-indexed)
   let shp_sc   = scan (+) 0 mat_shp
   -- Shift the shape array right
@@ -196,19 +236,19 @@ let spMatVctMult [num_elms] [vct_len] [num_rows]
   let row_sums = sgmSumF32 row_flg muls
   -- Extract the last element of each row
   in map (\i -> row_sums[i-1]) shp_sc
-#+END_SRC
+\end{verbatim}
 
 I test with the following information:
-#+BEGIN_SRC sh
+\begin{verbatim}
 $ futhark dataset --i32-bounds=0:9999 -g [1000000]i32 --f32-bounds=-7.0:7.0 -g [1000000]f32 --i32-bounds=100:100 -g [10000]i32 --f32-bounds=-10.0:10.0 -g [10000]f32 > data.in
-#+END_SRC
+\end{verbatim}
 And the test cases:
-#+BEGIN_SRC
+\begin{verbatim}
 -- compiled input @ data.in auto output
-#+END_SRC
-in both =spMVmult-flat= and =spMVmult-seq=, and let the futhark bench run 20 rounds each and i get 
+\end{verbatim}
+in both \texttt{spMVmult-flat} and \texttt{spMVmult-seq}, and let the futhark bench run 20 rounds each and i get 
 the following output:
-#+BEGIN_SRC sh
+\begin{verbatim}
 [wbr220@a00333 w1-code-handin]$ futhark bench --backend=opencl --runs=20 spMVmult-seq.fut spMVmult-fla
 t.fut < data.in
 Compiling spMVmult-seq.fut...
@@ -222,7 +262,6 @@ data.in:                                                             255μs (RSD
 Results for spMVmult-seq.fut:
 #0 ("[0i32, 1i32, 0i32, 1i32, 2i32, 1i32, 2i32, 3i32, 2..."):        430μs (RSD: 0.037; min:  -6%; max:  +7%)
 data.in:                                                        32370819μs (RSD: 0.182; min: -14%; max: +37%)
-#+END_SRC
-And we see an average speedup of 99.999%.
-
-
+\end{verbatim}
+And we see an average speedup of 99.999\%.
+\end{document}

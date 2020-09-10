@@ -7,6 +7,7 @@
 --   [2.0f32, 1.0, 0.0, 3.0]
 -- } 
 -- output { [3.0f32, 0.0f32, -4.0f32, 6.0f32, 9.0f32] }
+-- compiled input @ data.in auto output
 
 ------------------------
 --- Sgm Scan Helpers ---
@@ -99,11 +100,12 @@ let spMatVctMult [num_elms] [vct_len] [num_rows]
                  (vct : [vct_len]f32) : [num_rows]f32 =
 
   let shp_sc   = scan (+) 0 mat_shp
-  -- ... continue here ...
-  in  replicate num_rows 0.0f32
+  let shp_rot  = map (\i -> if i == 0 then 0 else shp_sc[i-1]) (iota num_rows)
+  let row_flg  = scatter (replicate num_elms 0) shp_rot (replicate num_rows 1)
+  let muls = map (\(i, x) -> x*vct[i]) mat_val
+  let row_sums = sgmSumF32 row_flg muls
+  in map (\i -> row_sums[i-1]) shp_sc
 
-
--- One may run with for example:
 -- $ futhark dataset --i32-bounds=0:9999 -g [1000000]i32 --f32-bounds=-7.0:7.0 -g [1000000]f32 --i32-bounds=100:100 -g [10000]i32 --f32-bounds=-10.0:10.0 -g [10000]f32 | ./spMVmult-seq -t /dev/stderr > /dev/null
 let main [n] [m] 
          (mat_inds : [n]i32) (mat_vals : [n]f32) 
