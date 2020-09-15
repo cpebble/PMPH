@@ -4,12 +4,19 @@
 #include <cuda_runtime.h>
 #include <sys/time.h>
 #include <time.h>
+// Cuda testing and assertion from Anders
+#include <assert.h>
+#define cudaAssert(x) (assert((x) == cudaSuccess))
+
+// Custom and default block_size and N
 #ifndef BLOCK_SIZE
   #define BLOCK_SIZE 256
 #endif
 #ifndef N_ELEMS
   #define N_ELEMS 753411
 #endif
+// How many benchmarks to run
+#define BENCH_RUNS 200
 
 
 // Src: Lab1-CudaIntro. Get time difference
@@ -29,7 +36,8 @@ __global__ void kernel(float *d_in, float *d_out, int N){
   const unsigned int lid = threadIdx.x; // Local id inside a block
   const unsigned int gid = blockIdx.x*blockDim.x + lid; // global id
   if (gid < N){
-    d_out[gid] = powf(d_in[gid]/(d_in[gid]-2.3), 3);
+    float x = d_in[gid]/(d_in[gid]-2.3);
+    d_out[gid] = x*x*x;
   }
 }
 
@@ -52,31 +60,52 @@ void gpu_run(float* inp, float* out, int N)
   cudaMalloc((void**)&d_out, mem_size);
 
   // Copy host mem to device
-  cudaMemcpy(d_in, inp, mem_size, cudaMemcpyHostToDevice);
+  cudaError_t e = cudaMemcpy(d_in, inp, mem_size, cudaMemcpyHostToDevice);
+  if ( e != 0)
+  {
+    printf("Cuda memory couldn't be allocated. Error:\n%s\n", cudaGetErrorString(e));
+    return 1;
+  }
   // Exec kernel(with timetrack)
   gettimeofday(&t_start, NULL);
-  kernel<<<num_blocks, block_size>>>(d_in, d_out, N);
+  for(int i = 0; i < BENCH_RUNS; i++){
+    kernel<<<num_blocks, block_size>>>(d_in, d_out, N);
+  }
+  assert(cudaPeekAtLastError());
+  cudaDeviceSynchronize();// Ensure kernel has finished
   gettimeofday(&t_end, NULL);
   // Copy result from device to host
   cudaMemcpy(out, d_out, mem_size, cudaMemcpyDeviceToHost);
   cudaFree(d_in); cudaFree(d_out);
   // Calculate and print time
   timeval_subtract(&t_diff, &t_end, &t_start);
-  elapsed = (t_diff.tv_sec*1e6+t_diff.tv_usec);
-  printf("GPU Run took %d microseconds (%.2fms)\n", elapsed, elapsed / 1000.0);
+  elapsed = ((t_diff.tv_sec*1e6+t_diff.tv_usec) / BENCH_RUNS);
+  printf("GPU(%d runs) took %d microseconds (%.2fms)\n",
+          BENCH_RUNS,
+          elapsed,
+          elapsed / 1000.0
+        );
+  return 0;
 }
 
 void seq_run(float* inp, float* out, int N){
   unsigned long int elapsed; 
   struct timeval t_start, t_end, t_diff;
   gettimeofday(&t_start, NULL);
-  for(unsigned int i = 0; i < N; ++i){
-    out[i] = powf(inp[i]/(inp[i]-2.3), 3);
+  for(unsigned int j = 0; j < BENCH_RUNS; j++){
+    for(unsigned int i = 0; i < N; ++i){
+      float x = inp[i]/(inp[i]-2.3);
+      out[i] = x*x*x;
+    }
   }
   gettimeofday(&t_end, NULL);
   timeval_subtract(&t_diff, &t_end, &t_start);
-  elapsed = (t_diff.tv_sec*1e6+t_diff.tv_usec);
-  printf("CPU Run took %d microseconds (%.2fms)\n", elapsed, elapsed / 1000.0);
+  elapsed = (t_diff.tv_sec*1e6+t_diff.tv_usec) / BENCH_RUNS;
+  printf("CPU(%d runs) took %d microseconds (%.2fms)\n",
+          BENCH_RUNS,
+          elapsed,
+          elapsed / 1000.0
+        );
 }
 
 int main( int argc, char** argv){
@@ -92,7 +121,11 @@ int main( int argc, char** argv){
   // Run the code on the CPU
   seq_run(in, seq_out, N);
   // Run the code on the GPU
-  gpu_run(in, gpu_out, N);
+  int e = gpu_run(in, gpu_out, N);
+  if (e != 0){
+    printf("Error in gpu run\n");
+    return 1;
+  }
 
   // Now validate results:
   int passed = 0;
