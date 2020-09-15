@@ -60,7 +60,8 @@ void gpu_run(float* inp, float* out, int N)
   cudaMalloc((void**)&d_out, mem_size);
 
   // Copy host mem to device
-  if ((cudaError_t e = cudaMemcpy(d_in, inp, mem_size, cudaMemcpyHostToDevice)) != 0)
+  cudaError_t e = cudaMemcpy(d_in, inp, mem_size, cudaMemcpyHostToDevice);
+  if ( e != 0)
   {
     printf("Cuda memory couldn't be allocated. Error:\n%s\n", cudaGetErrorString(e));
     return 1;
@@ -70,6 +71,7 @@ void gpu_run(float* inp, float* out, int N)
   for(int i = 0; i < BENCH_RUNS; i++){
     kernel<<<num_blocks, block_size>>>(d_in, d_out, N);
   }
+  assert(cudaPeekAtLastError());
   cudaDeviceSynchronize();// Ensure kernel has finished
   gettimeofday(&t_end, NULL);
   // Copy result from device to host
@@ -83,6 +85,7 @@ void gpu_run(float* inp, float* out, int N)
           elapsed,
           elapsed / 1000.0
         );
+  return 0;
 }
 
 void seq_run(float* inp, float* out, int N){
@@ -118,7 +121,8 @@ int main( int argc, char** argv){
   // Run the code on the CPU
   seq_run(in, seq_out, N);
   // Run the code on the GPU
-  if ((int e = gpu_run(in, gpu_out, N)) != 0){
+  int e = gpu_run(in, gpu_out, N);
+  if (e != 0){
     printf("Error in gpu run\n");
     return 1;
   }
