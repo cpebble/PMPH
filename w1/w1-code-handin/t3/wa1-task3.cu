@@ -41,7 +41,7 @@ __global__ void kernel(float *d_in, float *d_out, int N){
   }
 }
 
-void gpu_run(float* inp, float* out, int N)
+int gpu_run(float* inp, float* out, int N)
 {
   // Most of this code is stolened from the lab1 slides
   // Time tracking vars
