@@ -71,7 +71,7 @@ int gpu_run(float* inp, float* out, int N)
   for(int i = 0; i < BENCH_RUNS; i++){
     kernel<<<num_blocks, block_size>>>(d_in, d_out, N);
   }
-  assert(cudaPeekAtLastError());
+  cudaAssert(cudaPeekAtLastError());
   cudaDeviceSynchronize();// Ensure kernel has finished
   gettimeofday(&t_end, NULL);
   // Copy result from device to host
