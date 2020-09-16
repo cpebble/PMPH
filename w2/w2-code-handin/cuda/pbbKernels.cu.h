@@ -217,6 +217,7 @@ scanIncBlock(volatile typename OP::RedElTp* ptr, const unsigned int idx) {
     const unsigned int lane   = idx & (WARP-1);
     const unsigned int warpid = idx >> lgWARP;
 
+
     // 1. perform scan at warp level
     typename OP::RedElTp res = scanIncWarp<OP>(ptr,idx);
     __syncthreads();
@@ -236,7 +237,6 @@ scanIncBlock(volatile typename OP::RedElTp* ptr, const unsigned int idx) {
     if (warpid > 0) {
         res = OP::apply(ptr[warpid-1], res);
     }
-    __syncthreads();
 
     return res;
 }

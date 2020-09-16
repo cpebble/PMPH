@@ -3,11 +3,18 @@
 
 __global__ void
 replicate0(int tot_size, char* flags_d) {
-    // ... fill in your implementation here ...
+    uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (gid < tot_size){
+        flags_d[gid] = 0;
+    }
 }
 
 __global__ void
 mkFlags(int mat_rows, int* mat_shp_sc_d, char* flags_d) {
+    uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (gid == 0){
+        printf("%d", mat_shp_sc_d[0]);
+    }
     // ... fill in your implementation here ...
 }
 
