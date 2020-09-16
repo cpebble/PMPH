@@ -435,7 +435,8 @@ copyFromGlb2ShrMem( const uint32_t glb_offs
 ) {
     #pragma unroll
     for(uint32_t i=0; i<CHUNK; i++) {
-        uint32_t loc_ind = threadIdx.x * CHUNK + i;
+        const unsigned int lane = threadIdx.x & (WARP-1);
+        uint32_t loc_ind =  (threadIdx.x - lane) * CHUNK + lane;
         uint32_t glb_ind = glb_offs + loc_ind;
         T elm = ne;
         if(glb_ind < N) { 
