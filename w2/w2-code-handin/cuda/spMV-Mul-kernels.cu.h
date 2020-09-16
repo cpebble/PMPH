@@ -14,7 +14,7 @@ mkFlags(int mat_rows, int* mat_shp_sc_d, char* flags_d) {
     uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
     if (gid < mat_rows){
         if(gid == 0)
-            flags_d[gid] == 0;
+            flags_d[gid] = 0;
         else{
             int tmp = mat_shp_sc_d[gid-1];
             flags_d[tmp] = 1;
