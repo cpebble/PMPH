@@ -12,15 +12,22 @@ replicate0(int tot_size, char* flags_d) {
 __global__ void
 mkFlags(int mat_rows, int* mat_shp_sc_d, char* flags_d) {
     uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
-    if (gid == 0){
-        printf("mat_rows: %d, %d\n", mat_rows, mat_shp_sc_d[2]);
+    if (gid < mat_rows){
+        if(gid == 0)
+            flags_d[gid] == 0;
+        else{
+            int tmp = mat_shp_sc_d[gid-1];
+            flags_d[tmp] = 1;
+        }
     }
-    // ... fill in your implementation here ...
 }
 
 __global__ void 
 mult_pairs(int* mat_inds, float* mat_vals, float* vct, int tot_size, float* tmp_pairs) {
     // ... fill in your implementation here ...
+    uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (gid)
+        printf("%d\n", tot_size);
 }
 
 __global__ void
