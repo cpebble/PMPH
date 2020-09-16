@@ -180,13 +180,21 @@ template<class OP>
 __device__ inline typename OP::RedElTp
 scanIncWarp( volatile typename OP::RedElTp* ptr, const unsigned int idx ) {
     const unsigned int lane = idx & (WARP-1);
-
-    if(lane==0) {
-        #pragma unroll
-        for(int i=1; i<WARP; i++) {
-            ptr[idx+i] = OP::apply(ptr[idx+i-1], ptr[idx+i]);
+    #pragma unroll
+    for(int d = 0; d < WARP; d++){
+        int h = 1 << d;
+        if (i >= h){
+            ptr[lane] = OP::apply(ptr[lane-1], ptr[lane]);
         }
+
     }
+
+    //if(lane==0) {
+        //#pragma unroll
+        //for(int i=1; i<WARP; i++) {
+            //ptr[idx+i] = OP::apply(ptr[idx+i-1], ptr[idx+i]);
+        //}
+    //}
     return OP::remVolatile(ptr[idx]);
 }
 
@@ -435,7 +443,7 @@ copyFromGlb2ShrMem( const uint32_t glb_offs
 ) {
     #pragma unroll
     for(uint32_t i=0; i<CHUNK; i++) {
-        uint32_t loc_ind = i*blockDim.x + threadIdx.x;
+        uint32_t loc_ind = threadIdx.x + (i*blockDim.x);
         uint32_t glb_ind = glb_offs + loc_ind;
         T elm = ne;
         if(glb_ind < N) { 
@@ -467,7 +475,7 @@ copyFromShr2GlbMem( const uint32_t glb_offs
 ) {
     #pragma unroll
     for (uint32_t i = 0; i < CHUNK; i++) {
-        uint32_t loc_ind = i*blockDim.x + threadIdx.x;
+        uint32_t loc_ind = threadIdx.x + (i*blockDim.x);
         uint32_t glb_ind = glb_offs + loc_ind;
         if (glb_ind < N) {
             T elm = const_cast<const T&>(shmem_red[loc_ind]);
