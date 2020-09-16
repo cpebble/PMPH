@@ -178,7 +178,8 @@ int SparseMatVctMult(int block_size, int mat_rows, int vct_size) {
 
         gettimeofday(&t_start, NULL); 
 
-        for(uint32_t k=0; k<RUNS_GPU; k++)
+        //for(uint32_t k=0; k<RUNS_GPU; k++)
+        for(uint32_t k=0; k<1; k++)
         {
             { // Make flag array
                 // 1. scan the shape array
