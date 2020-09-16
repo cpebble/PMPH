@@ -13,7 +13,7 @@ __global__ void
 mkFlags(int mat_rows, int* mat_shp_sc_d, char* flags_d) {
     uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
     if (gid == 0){
-        printf("%d\n", mat_shp_sc_d[1]);
+        printf("mat_rows: %d, %d\n", mat_rows, mat_shp_sc_d[2]);
     }
     // ... fill in your implementation here ...
 }
