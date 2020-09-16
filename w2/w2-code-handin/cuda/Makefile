@@ -1,5 +1,5 @@
 COMPILER?=nvcc
-OPT_FLAGS?=-O3 -arch=compute_35
+OPT_FLAGS?=-O3 -arch=compute_35 -Wno-deprecated-gpu-targets
 LDFLAGS?=-lOpenCL
 
 TEST_PBB=test-pbb
