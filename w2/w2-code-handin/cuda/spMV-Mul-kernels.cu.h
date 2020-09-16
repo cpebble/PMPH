@@ -36,7 +36,7 @@ select_last_in_sgm(int mat_rows, int* mat_shp_sc_d, float* tmp_scan, float* res_
     // ... fill in your implementation here ...
     uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
     if (gid < mat_rows){
-        res_vct_d[gid] = tmp_scan[mat_shp_sc_d[gid] - 1]
+        res_vct_d[gid] = tmp_scan[mat_shp_sc_d[gid] - 1];
     }
 }
 
