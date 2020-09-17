@@ -241,7 +241,7 @@ scanIncBlock(volatile typename OP::RedElTp* ptr, const unsigned int idx) {
     if (warpid > 0 && warpid <= 30) {
         res = OP::apply(ptr[warpid-1], res);
     }
-    else {
+    else if (warpid > 30){
         res = OP::apply(ptr[warpid], res);
     }
 
