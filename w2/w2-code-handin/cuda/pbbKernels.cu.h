@@ -180,6 +180,8 @@ template<class OP>
 __device__ inline typename OP::RedElTp
 scanIncWarp( volatile typename OP::RedElTp* ptr, const unsigned int idx ) {
     const unsigned int lane = idx & (WARP-1);
+    #if 1
+    #then
     #pragma unroll
     for(int d = 0; d < lgWARP; d++){
         int h = 1 << d;
@@ -188,13 +190,14 @@ scanIncWarp( volatile typename OP::RedElTp* ptr, const unsigned int idx ) {
         }
 
     }
-
-    //if(lane==0) {
-        //#pragma unroll
-        //for(int i=1; i<WARP; i++) {
-            //ptr[idx+i] = OP::apply(ptr[idx+i-1], ptr[idx+i]);
-        //}
-    //}
+    #else
+    if(lane==0) {
+        #pragma unroll
+        for(int i=1; i<WARP; i++) {
+            ptr[idx+i] = OP::apply(ptr[idx+i-1], ptr[idx+i]);
+        }
+    } 
+    #endif
     return OP::remVolatile(ptr[idx]);
 }
 
@@ -226,13 +229,10 @@ scanIncBlock(volatile typename OP::RedElTp* ptr, const unsigned int idx) {
     //   the first warp. This works because
     //   warp size = 32, and 
     //   max block size = 32^2 = 1024
-    typename OP::RedElTp tmp;
-    // ptr[warpid] = OP::remVolatile(ptr[idx]); 
-    if (lane == (WARP-1) && warpid != 31) { 
+    if (lane == (WARP-1) && warpid < 31) { 
         ptr[warpid] = OP::remVolatile(ptr[idx]);
-    } 
-    
-    __syncthreads();
+    }
+
     // 3. scan again the first warp
     if (warpid == 0) scanIncWarp<OP>(ptr, idx);
     __syncthreads();
@@ -241,8 +241,6 @@ scanIncBlock(volatile typename OP::RedElTp* ptr, const unsigned int idx) {
     if (warpid > 0) {
         res = OP::apply(ptr[warpid-1], res);
     }
-    
-
     return res;
 }
 
