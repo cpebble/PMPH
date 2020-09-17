@@ -114,8 +114,8 @@ int testGenRed( const uint32_t        B     // desired CUDA block size ( <= 1024
         cudaMemcpy(&gpu_res, d_out, sizeof(typename OP::RedElTp), cudaMemcpyDeviceToHost);
         if( !OP::equals(gpu_res, cpu_res) ) {
             printf("INVALID, EXITING!!!\n");
-            printf("!!!INVALID!!!: Reduce dev-val: %d, host-val: %d\n"
-                  , gpu_res, cpu_res);
+            // printf("!!!INVALID!!!: Reduce dev-val: %d, host-val: %d\n"
+                //   , gpu_res, cpu_res);
             exit(1);
         }
         printf("Reduce: VALID result!\n\n");

@@ -52,3 +52,5 @@ flycheck_*.el
 # network security
 /network-security.data
 *data.in
+w2/w2-code-handin/cuda/test-pbb
+w1/w1-code-handin/t3/wa1-task3
