@@ -231,10 +231,6 @@ scanIncBlock(volatile typename OP::RedElTp* ptr, const unsigned int idx) {
     if (lane == (WARP-1) && warpid != 31) { 
         ptr[warpid] = OP::remVolatile(ptr[idx]);
     } 
-    __syncthreads();
-    if (lane == (WARP-1) && warpid == 31) {
-        ptr[warpid] = OP::remVolatile(ptr[idx]);
-    }
     
     __syncthreads();
     // 3. scan again the first warp
