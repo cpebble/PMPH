@@ -1,6 +1,4 @@
 #+TITLE:Weekly assignment 2
-[toc]
-* TODO Task 1
 * Task 2: MemCpy but faster
 In this task i am asked to improve a written "Copy from/to Global memory from/to Shared memory.  
 The given function(and replacement) is shown below:
@@ -36,7 +34,43 @@ shown above, we have a constant($i*blockDim$)in the context of this single instr
 being added to the threadIds in every warp. Thus every thread in the warp will fetch
 a constant and it's id, resulting in 32 sequential integers being fetched from
 memory. Thus we get the added coalescence bonus.
-** TODO Performance speedup:
+** Performance speedup:
+*** The slow version
+#+BEGIN_SRC bash
+[wbr220@a00333 cuda]$ make
+...
+Reduce GPU Kernel runs in: 3214 microsecs, GB/sec: 62.23
+Reduce CPU Sequential runs in: 233958 microsecs, GB/sec: 0.85
+Reduce: VALID result!
+
+Scan Inclusive AddI32 GPU Kernel runs in: 2531 microsecs, GB/sec: 237.08
+Scan Inclusive AddI32 CPU Sequential runs in: 42051 microsecs, GB/sec: 9.51
+Scan Inclusive AddI32: VALID result!
+
+SgmScan Inclusive AddI32 GPU Kernel runs in: 1772 microsecs, GB/sec: 395.06
+SgmScan Inclusive AddI32 CPU Sequential runs in: 147676 microsecs, GB/sec: 2.71
+SgmScan Inclusive AddI32: VALID result!
+#+END_SRC
+*** The fast version
+#+BEGIN_SRC bash
+[wbr220@a00333 cuda]$ make
+...
+Reduce GPU Kernel runs in: 2835 microsecs, GB/sec: 70.55
+Reduce CPU Sequential runs in: 232041 microsecs, GB/sec: 0.86
+Reduce: VALID result!
+
+Scan Inclusive AddI32 GPU Kernel runs in: 1791 microsecs, GB/sec: 335.03
+Scan Inclusive AddI32 CPU Sequential runs in: 40986 microsecs, GB/sec: 9.76
+Scan Inclusive AddI32: VALID result!
+
+SgmScan Inclusive AddI32 GPU Kernel runs in: 1693 microsecs, GB/sec: 413.50
+SgmScan Inclusive AddI32 CPU Sequential runs in: 145349 microsecs, GB/sec: 2.75
+SgmScan Inclusive AddI32: VALID result!
+#+END_SRC
+*** Conclusion
+The speedup is easily viewable in tests above, while no significant speedup
+is seen in the Int32 operators. I assume this is because only those functions
+make efficient use of the Global vs Shared memory
 
 * Task 3: Scanning reimagined
 In this task i implement a parallel inclusive scan at WARP level. The algorithm
@@ -58,7 +92,18 @@ scanIncWarp( volatile typename OP::RedElTp* ptr, const unsigned int idx ) {
     return OP::remVolatile(ptr[idx]);
 }
 #+END_SRC
-** TODO Performance speedup:
+** Performance speedup:
+After implementing the previous two optimizations, i present the following table:  
+Where =C = coalesced reads= and =W = warp-level optimization=, and all results in microsecs
+|                            | !C !W | C !W | !C W |  C W |
+|----------------------------+-------+------+------+------+
+| Naive Reduce<int32> add    |  1371 | 1371 | 1371 | 1371 |
+| Optimized Reduce<int32 add |   401 |  401 |  410 |  410 |
+| Naive Reduce<mssp>         |  4439 | 4439 | 4439 | 4439 |
+| Optimized Reduce<mssp>     |  3189 | 2833 | 2086 | 1732 |
+| Scan Inclusive AddI32      |  2515 | 1791 | 1763 | 1278 |
+| SgmScan Inclusive AddI32   |  1768 | 1694 | 1766 | 1695 |
+
 * Task 4: Scanning 2: electric bugaloo
 In the function =scanIncBlock= we spot a nasty race condition when running
 with the max size of blocks(1024), the code in question looks like this initially:
@@ -75,6 +120,7 @@ scanIncBlock(volatile typename OP::RedElTp* ptr, const unsigned int idx) {
     if (lane == (WARP-1)) { 
         ptr[warpid] = OP::remVolatile(ptr[idx]);
     }
+    __syncthreads();
     // 3. scan again the first warp
     if (warpid == 0) scanIncWarp<OP>(ptr, idx);
     __syncthreads();
@@ -190,3 +236,12 @@ unsigned int num_blocks_shp = ((mat_rows + (block_size - 1)) / block_size);
 The code above is taken from equivalent calculations in weekly 1
 
 ** Speedup
+Running =make run-spmv= we see a very obvious speedup:
+#+BEGIN_SRC bash
+Testing Sparse-MatVec Mul with num-rows-matrix: 11033, vct-size: 2076, block size: 256
+
+Vect_size: 2076, tot_size: 11511300 mat_rows: 11033
+CPU Sparse Matrix-Vector Multiplication runs in: 11499 microsecs
+GPU Sparse Matrix-Vector Multiplication runs in: 16 microsecs
+Sparse Mat-Vect Mult VALID   RESULT
+#+END_SRC
