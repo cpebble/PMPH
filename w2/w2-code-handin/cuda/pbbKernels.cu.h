@@ -233,6 +233,7 @@ scanIncBlock(volatile typename OP::RedElTp* ptr, const unsigned int idx) {
         ptr[warpid] = OP::remVolatile(ptr[idx]);
     }
 
+    __syncthreads();
     // 3. scan again the first warp
     if (warpid == 0) scanIncWarp<OP>(ptr, idx);
     __syncthreads();
