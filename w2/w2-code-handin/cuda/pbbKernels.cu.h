@@ -451,7 +451,7 @@ copyFromGlb2ShrMem( const uint32_t glb_offs
         #then
         uint32_t loc_ind = threadIdx.x + (i*blockDim.x);
         #else
-        uint32_t loc_ind = threadIdx.x * CHUNK + i
+        uint32_t loc_ind = threadIdx.x * CHUNK + i;
         #endif
         uint32_t glb_ind = glb_offs + loc_ind;
         T elm = ne;
