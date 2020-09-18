@@ -180,15 +180,13 @@ template<class OP>
 __device__ inline typename OP::RedElTp
 scanIncWarp( volatile typename OP::RedElTp* ptr, const unsigned int idx ) {
     const unsigned int lane = idx & (WARP-1);
-    #if 0
-    #then
+    #if 1
     #pragma unroll
     for(int d = 0; d < lgWARP; d++){
         int h = 1 << d;
         if (lane >= h){
             ptr[idx] = OP::apply(ptr[idx-h], ptr[idx]);
         }
-
     }
     #else
     if(lane==0) {
@@ -448,8 +446,7 @@ copyFromGlb2ShrMem( const uint32_t glb_offs
 ) {
     #pragma unroll
     for(uint32_t i=0; i<CHUNK; i++) {
-        #if 0
-        #then
+        #if 1
         uint32_t loc_ind = threadIdx.x + (i*blockDim.x);
         #else
         uint32_t loc_ind = threadIdx.x * CHUNK + i;
@@ -485,7 +482,11 @@ copyFromShr2GlbMem( const uint32_t glb_offs
 ) {
     #pragma unroll
     for (uint32_t i = 0; i < CHUNK; i++) {
+        #if 1
         uint32_t loc_ind = threadIdx.x + (i*blockDim.x);
+        #else
+        uint32_t loc_ind = threadIdx.x * CHUNK + i;
+        #endif
         uint32_t glb_ind = glb_offs + loc_ind;
         if (glb_ind < N) {
             T elm = const_cast<const T&>(shmem_red[loc_ind]);
