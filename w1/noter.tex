@@ -1,4 +1,4 @@
-% Created 2020-09-10 Thu 22:54
+% Created 2020-09-20 Sun 15:19
 % Intended LaTeX compiler: pdflatex
 \documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
@@ -14,10 +14,11 @@
 \usepackage{amssymb}
 \usepackage{capt-of}
 \usepackage{hyperref}
+\author{Christian P.}
 \date{\today}
 \title{}
 \hypersetup{
- pdfauthor={},
+ pdfauthor={Christian P.},
  pdftitle={},
  pdfkeywords={},
  pdfsubject={},
@@ -28,9 +29,9 @@
 \tableofcontents
 
 \section{Task 1}
-\label{sec:org95b2583}
+\label{sec:org51cb4a9}
 \subsection{Subtask 1}
-\label{sec:orga1948f9}
+\label{sec:org1244989}
 For subtask 1 we look at the following list homomorphism:
 \begin{verbatim}
 h []  = e
@@ -38,7 +39,7 @@ h [a] = f a
 h (x ++ y) = (h x) o (h y)
 \end{verbatim}
 \subsubsection{Proving associativity}
-\label{sec:org17fa34f}
+\label{sec:org3a00b45}
 I aim to prove that for any \texttt{[a,b,c]} in \texttt{Img(h)} the following holds: \texttt{(a o b) o c = a o (b o c)} 
 
 I pick \texttt{(x,y,z)} and such that \texttt{(h x) = a, (h y) = b, (h z) = c} 
@@ -59,7 +60,7 @@ h (h (x ++ y) ++ z) = h( x ++ (h y ++ h z))
 \end{verbatim}
 
 \subsubsection{Proving the neutral element}
-\label{sec:org0228c9c}
+\label{sec:org2f5e120}
 I then want to prove that for all \texttt{b} in \texttt{Img(h)}, \texttt{b o e = e o b = b}  
 
 For every \texttt{b in Img(h)} there exists an a in \texttt{A} s.t. \texttt{h(a) = b}
@@ -73,7 +74,7 @@ b = b o e = e o b
 \end{verbatim}
 
 \subsection{Subtask 2}
-\label{sec:org33e661e}
+\label{sec:org895fdfa}
 I want to prove the following invariant:
 \begin{verbatim}
 (reduce (+) 0) . (map f)
@@ -96,7 +97,71 @@ And we can use this on the lhs of the invariant, and draw the following conclusi
 \end{verbatim}
 
 \section{Task 2}
-\label{sec:org9b3cc5e}
+\label{sec:org975fc40}
+\subsection{Feedback:}
+\label{sec:org1b6ac20}
+\subsubsection{Also, please explain and discuss how you execute your benchmarks: Which test}
+\label{sec:orgfb57488}
+cases you include, which GPU you run them on, and so on. If you decide to
+resubmit, please include this.
+
+For the benchmarks described later in this section, all tests were run on the
+\texttt{gpu04} machine, using the datasets outputted by futhark dataset. The applications are
+then run ten times each, printing the timestamps to \texttt{/dev/stderr}. For benchmarking purposes
+i only included the \texttt{lssp-sorted} problem, since all three problems should see approximately
+the same speedup(the only difference is the predicates being tested), however in this resubmission
+i include the tests for all three lssp problems.
+\begin{verbatim}
+$ lssp-zeros-c
+17859
+...
+17824
+-- Avg: 17835
+$ lssp-zeros-opencl
+736
+...
+742
+-- Avg: 737
+\end{verbatim}
+\begin{verbatim}
+$ lssp-same-c
+23793
+..
+23783
+-- Avg: 23808
+$ lssp-same-opencl
+744
+...
+736
+-- Avg: 739
+\end{verbatim}
+\begin{verbatim}
+$ lssp-sorted-c
+23757
+...
+23823
+-- Avg: 23934
+$ lssp-sorted-opencl
+735
+...
+736
+-- Avg: 736
+\end{verbatim}
+
+When calculating my speeup down below i made an error. The correct way to calculate the speedup would be
+\(\frac{sequential}{parallel}\), and i do this for each of the three predicates:
+\begin{verbatim}
+17835/737 = 24x speedup
+23808/739 = 32x speedup
+23934/736 = 32x speedup
+\end{verbatim}
+And as can be seen, this parallel version gives us around 32x speedup. One reason why the lssp-zeros
+runs faster than the other two, might be because comparing with zero is a machine-code instruction, 
+while comparing two numbers to each other, requires a subtraction and a register read/write. This
+could explain why lssp-zeros is faster htan lssp-sorted and lssp-same.
+
+\subsection{Lssp}
+\label{sec:orgc0f5c4c}
 We write the parallel version of the longest segment by implementing according to the lecture notes.  
 More in-depth; We calculate the LSS and the following extra baggage:
 \begin{enumerate}
@@ -113,7 +178,7 @@ the exception of checking against tly instead)
 \end{enumerate}
 
 \subsection{Speedups}
-\label{sec:org36c3c6f}
+\label{sec:org892111c}
 I now test the runtime difference between a sequential c compilation, and an opencl compilation:
 \begin{verbatim}
 [wbr220@a00333 lssp]$ futhark dataset --i32-bounds=-10:10 -b -g [10000000]i32 > data.in
@@ -147,7 +212,38 @@ I now test the runtime difference between a sequential c compilation, and an ope
 And we see a 97\% speedup on average
 
 \section{Task 3}
-\label{sec:org8862fb8}
+\label{sec:org3362658}
+\subsection{Resubmission}
+\label{sec:org4f9fcf4}
+For the resubmission, i split the kernel into two lines:
+\begin{verbatim}
+__global__ void kernel(float *d_in, float *d_out, int N){
+  const unsigned int lid = threadIdx.x; // Local id inside a block
+  const unsigned int gid = blockIdx.x*blockDim.x + lid; // global id
+  if (gid < N){
+    float x = d_in[gid]/(d_in[gid]-2.3);
+    d_out[gid] = x*x*x;
+  }
+}
+\end{verbatim}
+And the same for the sequential code. This achieves the optimizations mentioned. Furthermore
+i added a macro \texttt{BENCH\_RUNS = 200}, and use this to run the gpu kernel 200 times, averaging
+the final runtime. Furthermore, i add a call to \texttt{cudaDeviceSynchronize()} after each kernel 
+call to ensure the kernel has run completely. The final testing code looks like this:
+\begin{verbatim}
+gettimeofday(&t_start, NULL);
+for(int i = 0; i < BENCH_RUNS; i++){
+  kernel<<<num_blocks, block_size>>>(d_in, d_out, N);
+}
+cudaDeviceSynchronize();// Ensure kernel has finished
+cudaAssert(cudaPeekAtLastError());
+gettimeofday(&t_end, NULL);
+\end{verbatim}
+Also included is an assertion that ensures no errors have been thrown
+
+\subsection{Assignment}
+\label{sec:orgb6a4614}
+
 I wrote the code, included in \texttt{wa1-task3.cu}, in Cuda c++. The code includes the requested
 GPU parallel in the \texttt{gpu\_run(float* inp, float* out, int N)} function, that takes two
 allocated arrays of memory, designed for the input and output. It's sequential equivalent
@@ -208,7 +304,39 @@ We now clearly see that for an array of a size arond 250 the CPU starts being sl
 the GPU, and by \(n = 1000\) the GPU is more than 3 times as fast as the CPU
 
 \section{Task 4}
-\label{sec:org1fe6cd4}
+\label{sec:org1241c4f}
+\subsection{Resubmission}
+\label{sec:org90ac418}
+Your benchmarks of `spMVmult-flat` are good! However, `spMVmult-seq` was \textbf{not}
+  intended for compilation to the OpenCL backend, but to the C backend, so your
+  measurement comparisons are unfortunately not very representative. If you
+  decide to resubmit, please re-run the exact same benchmarks, but compiling
+  `spMVmult-seq.fut` to the C backend  
+
+\textbf{To Fix This} I reran the spMVmult-seq and spMVmult-flat again with the following commands:
+\begin{verbatim}
+[wbr220@a00333 w1-code-handin]$ futhark bench --backend=opencl --runs=20 spMVmult-flat.fut
+Compiling spMVmult-flat.fut...
+Reporting average runtime of 20 runs for each dataset.
+
+Results for spMVmult-flat.fut:
+#0 ("[0i32, 1i32, 0i32, 1i32, 2i32, 1i32, 2i32, 3i32, 2..."):         95 (RSD: 0.117; min:  -7%; max: +43%)
+data.in:                                                             287 (RSD: 0.021; min:  -2%; max:  +7%)
+[wbr220@a00333 w1-code-handin]$ futhark bench --backend=c --runs=20 spMVmult-seq.fut
+Compiling spMVmult-seq.fut...
+Reporting average runtime of 20 runs for each dataset.
+
+Results for spMVmult-seq.fut:
+#0 ("[0i32, 1i32, 0i32, 1i32, 2i32, 1i32, 2i32, 3i32, 2..."):          0 (RSD: 2.380; min: -100%; max: +567%)
+data.in:                                                            1630 (RSD: 0.011; min:  -1%; max:  +3%)
+\end{verbatim}
+The sequential function now runs at a much more respectable speed, and the speedup can be
+calculated:
+$$ \frac{1630\mu - 287\mu}{1630\mu}\cdot 100 \approx 82.4 $$
+Which still leaves us with a respectable 82.4\% speedup.
+
+\subsection{Task}
+\label{sec:orgfb233d6}
 We need to flatten the following function:
 \begin{verbatim}
 map (\ row ->                             
@@ -256,12 +384,12 @@ Compiling spMVmult-flat.fut...
 Reporting average runtime of 20 runs for each dataset.
 
 Results for spMVmult-flat.fut:
-#0 ("[0i32, 1i32, 0i32, 1i32, 2i32, 1i32, 2i32, 3i32, 2..."):         93μs (RSD: 0.076; min:  -9%; max: +18%)
-data.in:                                                             255μs (RSD: 0.027; min:  -4%; max:  +5%)
+#0 ("[0i32, 1i32, 0i32, 1i32, 2i32, 1i32, 2i32, 3i32, 2..."):         93s (RSD: 0.076; min:  -9%; max: +18%)
+data.in:                                                             255s (RSD: 0.027; min:  -4%; max:  +5%)
 
 Results for spMVmult-seq.fut:
-#0 ("[0i32, 1i32, 0i32, 1i32, 2i32, 1i32, 2i32, 3i32, 2..."):        430μs (RSD: 0.037; min:  -6%; max:  +7%)
-data.in:                                                        32370819μs (RSD: 0.182; min: -14%; max: +37%)
+#0 ("[0i32, 1i32, 0i32, 1i32, 2i32, 1i32, 2i32, 3i32, 2..."):        430s (RSD: 0.037; min:  -6%; max:  +7%)
+data.in:                                                        32370819s (RSD: 0.182; min: -14%; max: +37%)
 \end{verbatim}
 And we see an average speedup of 99.999\%.
 \end{document}

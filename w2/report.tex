@@ -1,4 +1,4 @@
-% Created 2020-09-18 Fri 01:45
+% Created 2020-09-18 Fri 02:53
 % Intended LaTeX compiler: pdflatex
 \documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
@@ -29,11 +29,8 @@
 \maketitle
 \tableofcontents
 
-[toc]
-\section{{\bfseries\sffamily TODO} Task 1}
-\label{sec:org0faf0d8}
 \section{Task 2: MemCpy but faster}
-\label{sec:org2e39d21}
+\label{sec:org791fe0c}
 In this task i am asked to improve a written "Copy from/to Global memory from/to Shared memory.  
 The given function(and replacement) is shown below:
 \begin{verbatim}
@@ -68,11 +65,50 @@ shown above, we have a constant(\(i*blockDim\))in the context of this single ins
 being added to the threadIds in every warp. Thus every thread in the warp will fetch
 a constant and it's id, resulting in 32 sequential integers being fetched from
 memory. Thus we get the added coalescence bonus.
-\subsection{{\bfseries\sffamily TODO} Performance speedup:}
-\label{sec:org0f4377f}
+\subsection{Performance speedup:}
+\label{sec:orgb230591}
+\subsubsection{The slow version}
+\label{sec:orgc39250c}
+\begin{verbatim}
+[wbr220@a00333 cuda]$ make
+...
+Reduce GPU Kernel runs in: 3214 microsecs, GB/sec: 62.23
+Reduce CPU Sequential runs in: 233958 microsecs, GB/sec: 0.85
+Reduce: VALID result!
+
+Scan Inclusive AddI32 GPU Kernel runs in: 2531 microsecs, GB/sec: 237.08
+Scan Inclusive AddI32 CPU Sequential runs in: 42051 microsecs, GB/sec: 9.51
+Scan Inclusive AddI32: VALID result!
+
+SgmScan Inclusive AddI32 GPU Kernel runs in: 1772 microsecs, GB/sec: 395.06
+SgmScan Inclusive AddI32 CPU Sequential runs in: 147676 microsecs, GB/sec: 2.71
+SgmScan Inclusive AddI32: VALID result!
+\end{verbatim}
+\subsubsection{The fast version}
+\label{sec:orged47846}
+\begin{verbatim}
+[wbr220@a00333 cuda]$ make
+...
+Reduce GPU Kernel runs in: 2835 microsecs, GB/sec: 70.55
+Reduce CPU Sequential runs in: 232041 microsecs, GB/sec: 0.86
+Reduce: VALID result!
+
+Scan Inclusive AddI32 GPU Kernel runs in: 1791 microsecs, GB/sec: 335.03
+Scan Inclusive AddI32 CPU Sequential runs in: 40986 microsecs, GB/sec: 9.76
+Scan Inclusive AddI32: VALID result!
+
+SgmScan Inclusive AddI32 GPU Kernel runs in: 1693 microsecs, GB/sec: 413.50
+SgmScan Inclusive AddI32 CPU Sequential runs in: 145349 microsecs, GB/sec: 2.75
+SgmScan Inclusive AddI32: VALID result!
+\end{verbatim}
+\subsubsection{Conclusion}
+\label{sec:org8aed903}
+The speedup is easily viewable in tests above, while no significant speedup
+is seen in the Int32 operators. I assume this is because only those functions
+make efficient use of the Global vs Shared memory
 
 \section{Task 3: Scanning reimagined}
-\label{sec:org4d35db7}
+\label{sec:org52094bb}
 In this task i implement a parallel inclusive scan at WARP level. The algorithm
 to be implemented is explained in detail in the lecture notes for the second 
 lab class, so the actual implementation is pretty trivial
@@ -92,10 +128,25 @@ scanIncWarp( volatile typename OP::RedElTp* ptr, const unsigned int idx ) {
     return OP::remVolatile(ptr[idx]);
 }
 \end{verbatim}
-\subsection{{\bfseries\sffamily TODO} Performance speedup:}
-\label{sec:org93062b6}
+\subsection{Performance speedup:}
+\label{sec:org0a7ddb3}
+After implementing the previous two optimizations, i present the following table:  
+Where \texttt{C = coalesced reads} and \texttt{W = warp-level optimization}, and all results in microsecs
+\begin{center}
+\begin{tabular}{lrrrr}
+ & !C !W & C !W & !C W & C W\\
+\hline
+Naive Reduce<int32> add & 1371 & 1371 & 1371 & 1371\\
+Optimized Reduce<int32 add & 401 & 401 & 410 & 410\\
+Naive Reduce<mssp> & 4439 & 4439 & 4439 & 4439\\
+Optimized Reduce<mssp> & 3189 & 2833 & 2086 & 1732\\
+Scan Inclusive AddI32 & 2515 & 1791 & 1763 & 1278\\
+SgmScan Inclusive AddI32 & 1768 & 1694 & 1766 & 1695\\
+\end{tabular}
+\end{center}
+
 \section{Task 4: Scanning 2: electric bugaloo}
-\label{sec:orgc9f3889}
+\label{sec:orga9832ea}
 In the function \texttt{scanIncBlock} we spot a nasty race condition when running
 with the max size of blocks(1024), the code in question looks like this initially:
 \begin{verbatim}
@@ -111,6 +162,7 @@ scanIncBlock(volatile typename OP::RedElTp* ptr, const unsigned int idx) {
     if (lane == (WARP-1)) { 
 	ptr[warpid] = OP::remVolatile(ptr[idx]);
     }
+    __syncthreads();
     // 3. scan again the first warp
     if (warpid == 0) scanIncWarp<OP>(ptr, idx);
     __syncthreads();
@@ -162,7 +214,7 @@ however add a possibly expensive call to "syncthreads" and an extraneous
 if statement.
 
 \section{Task 5: Weekly 1 but in C++}
-\label{sec:org208e6fa}
+\label{sec:org2a3ade4}
 In the first weekly assignment, we wrote a flat version of sparse-matrix
 vector multiplication in Futhark. In this assignment we write the same
 flat algorithm in Cuda, using four kernels: 
@@ -227,5 +279,14 @@ unsigned int num_blocks_shp = ((mat_rows + (block_size - 1)) / block_size);
 The code above is taken from equivalent calculations in weekly 1
 
 \subsection{Speedup}
-\label{sec:orge4539a2}
+\label{sec:org4bddef1}
+Running \texttt{make run-spmv} we see a very obvious speedup:
+\begin{verbatim}
+Testing Sparse-MatVec Mul with num-rows-matrix: 11033, vct-size: 2076, block size: 256
+
+Vect_size: 2076, tot_size: 11511300 mat_rows: 11033
+CPU Sparse Matrix-Vector Multiplication runs in: 11499 microsecs
+GPU Sparse Matrix-Vector Multiplication runs in: 16 microsecs
+Sparse Mat-Vect Mult VALID   RESULT
+\end{verbatim}
 \end{document}
