@@ -45,7 +45,8 @@ let primesFlat (n : i32) : []i32 =
       -- Create flag arr
       let inds = scan (+) 0 mm1s
       let mm1s_rot = map (\i -> if i == 0 then 0 else inds[i-1]) (indices sq_primes)-- (iota sq_prime_len)
-      let flags = scatter (replicate flat_size 0) inds (replicate (length sq_primes) 1)
+      -- let flags = scatter (replicate flat_size 0) inds (replicate (length sq_primes) 1)
+      let flags = scatter (replicate flat_size 0) inds sq_primes
       -- Finally unroll the iota in map
       let mm1s_tmp = replicate flat_size 1
       let mm1s_flat = sgmSumI32 flags mm1s_tmp
