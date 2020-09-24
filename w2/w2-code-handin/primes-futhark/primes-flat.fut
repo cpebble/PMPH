@@ -51,7 +51,7 @@ let primesFlat (n : i32) : []i32 =
       let mm1s_tmp = replicate flat_size 1
       let mm1s_flat = sgmSumI32 flags mm1s_tmp
       -- flat list of [2..m]
-      let mm1sp2 = map (+2) mm1s_flat
+      let mm1sp2 = map (+1) mm1s_flat
       -- I need to replicate all of sq_prime inds times
       -- I can use the flags array to get the indexes of "new" primes
       let flags_ones = map (\x -> if x == 0 then 0 else 1) flags
