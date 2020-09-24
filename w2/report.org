@@ -245,3 +245,32 @@ CPU Sparse Matrix-Vector Multiplication runs in: 11499 microsecs
 GPU Sparse Matrix-Vector Multiplication runs in: 16 microsecs
 Sparse Mat-Vect Mult VALID   RESULT
 #+END_SRC
+
+** Resubmission
+*** Correct benchmarking
+For the resubmission, my TA correctly pointed out a flaw in how the benchmarks are run.  
+I accidentally a for loop, so only one run would be completed, yet the final time still
+divided by the GPU_RUNS variable. The Correct benchmark now looks like this:
+#+BEGIN_SRC bash
+./test-spmv 11033 2076 256
+Device name: GeForce RTX 2080 Ti
+Number of hardware threads: 69632
+Max block size: 1024
+Shared memory size: 49152
+====
+Testing Sparse-MatVec Mul with num-rows-matrix: 11033, vct-size: 2076, block size: 256
+
+Vect_size: 2076, tot_size: 11511300 mat_rows: 11033
+CPU Sparse Matrix-Vector Multiplication runs in: 12309 microsecs
+GPU Sparse Matrix-Vector Multiplication runs in: 840 microsecs
+Sparse Mat-Vect Mult VALID   RESULT
+#+END_SRC
+This benchmark is run on the =gpu04= machine, with gpu specs visible in the benchmark
+above. The inputs to the program is also visible as 
+=num-rows: 11033, vct-size: 2076, block size: 256=
+
+*** Validation
+To ensure the program is valid, aside from a visual inspection of the code, 
+we run the =test-spmv= program. This program completes both a CPU-sequential run and a 
+GPU run, and validates that both versions compute the same result, using the CPU
+resulting vector as the guiding answer.  
