@@ -40,12 +40,12 @@ let primesFlat (n : i32) : []i32 =
       -- I need to unwrap mm1s
       let mm1s = map (\p -> (len / p) - 1) sq_primes
       -- Calculate length of sq_prime
-      let sq_prime_zeros = map (\p -> 1) sq_primes
-      let sq_prime_len = reduce (+) 0 sq_prime_zeros
+      --let sq_prime_zeros = map (\p -> 1) sq_primes
+      --let sq_prime_len = reduce (+) 0 sq_prime_zeros
       -- Create flag arr
       let inds = scan (+) 0 mm1s
-      let mm1s_rot = map (\i -> if i == 0 then 0 else inds[i-1]) (iota sq_prime_len)
-      let flags = scatter (replicate flat_size 0) inds (replicate sq_prime_len 1)
+      let mm1s_rot = map (\i -> if i == 0 then 0 else inds[i-1]) (indices sq_primes)-- (iota sq_prime_len)
+      let flags = scatter (replicate flat_size 0) inds (replicate (length sq_primes) 1)
       -- Finally unroll the iota in map
       let mm1s_tmp = replicate size 1
       let mm1s_flat = sgmSumI32 flags mm1s_tmp
@@ -54,7 +54,7 @@ let primesFlat (n : i32) : []i32 =
       -- I need to replicate all of sq_prime inds times
       -- I can use the flags array to get the indexes of "new" primes
       let p_inds = scan (+) 0 flags
-      let p_expanded = map (\i -> sq_prime[i]) p_inds
+      let p_expanded = map (\i -> sq_primes[i]) p_inds
       
       let not_primes = map (\(j, p) -> j*p) zip(mm1sp2, p_expanded)
       --let inners = map (\mm1 -> (\j -> j * p) (map (+2) (iota mm1))) mm1s
