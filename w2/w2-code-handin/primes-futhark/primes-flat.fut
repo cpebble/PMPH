@@ -54,7 +54,8 @@ let primesFlat (n : i32) : []i32 =
       let mm1sp2 = map (+2) mm1s_flat
       -- I need to replicate all of sq_prime inds times
       -- I can use the flags array to get the indexes of "new" primes
-      let p_inds = scan (+) 0 flags
+      let flags_ones = scatter (replicate flat_size 0) inds (replicate (length sq_primes) 1)
+      let p_inds = scan (+) 0 flags_ones
       let p_expanded = map (\i -> sq_primes[i]) p_inds
       
       let not_primes = map2 (*) mm1sp2 p_expanded
