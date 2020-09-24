@@ -3,6 +3,18 @@
 -- compiled input { 30 } output { [2,3,5,7,11,13,17,19,23,29] }
 -- compiled input { 10000000i32 } auto output
 
+-- segmented scan with (+) on floats:
+let sgmSumI32 [n] (flg : [n]i32) (arr : [n]i32) : [n]i32 =
+  let flgs_vals = 
+    scan ( \ (f1, x1) (f2,x2) -> 
+            let f = f1 | f2 in
+            if f2 > 0 then (f, x2)
+            else (f, x1 + x2) )
+         (0,0) (zip flg arr)
+  let (_, vals) = unzip flgs_vals
+  in vals
+
+
 let primesFlat (n : i32) : []i32 =
   let sq_primes   = [2,3,5,7]
   let len  = 8
@@ -25,6 +37,29 @@ let primesFlat (n : i32) : []i32 =
       --                       ) sq_primes
       --   let not_primes = reduce (++) [] composite
       --
+      -- I need to unwrap mm1s
+      let mm1s = map (\p -> (len / p) - 1) sq_primes
+      -- Calculate length of sq_prime
+      let sq_prime_zeros = map (\p -> 1) sq_primes
+      let sq_prime_len = reduce (+) 0 sq_prime_zeros
+      -- Create flag arr
+      let inds = scan (+) 0 mm1s
+      let mm1s_rot = map (\i -> if i == 0 then 0 else inds[i-1]) (iota sq_prime_len)
+      let flags = scatter (replicate flat_size 0) inds (replicate sq_prime_len 1)
+      -- Finally unroll the iota in map
+      let mm1s_tmp = replicate size 1
+      let mm1s_flat = sgmSumI32 flags mm1s_tmp
+      -- flat list of [2..m]
+      let mm1sp2 = map (+2) mm1s_flat
+      -- I need to replicate all of sq_prime inds times
+      -- I can use the flags array to get the indexes of "new" primes
+      let p_inds = scan (+) 0 flags
+      let p_expanded = map (\i -> sq_prime[i]) p_inds
+      
+      let not_primes = map (\(j, p) -> j*p) zip(mm1sp2, p_expanded)
+      --let inners = map (\mm1 -> (\j -> j * p) (map (+2) (iota mm1))) mm1s
+
+      
       -- Your code should compute the right `not_primes`
       -- Please look at the lecture slides L2-Flattening.pdf to find
       --  the normalized nested-parallel version.
@@ -33,7 +68,7 @@ let primesFlat (n : i32) : []i32 =
       --  where `p \in sq_primes`.
       --
       
-      let not_primes = replicate flat_size 0
+      --let not_primes = replicate flat_size 0
 
       -- If not_primes is correctly computed, then the remaining
       -- code is correct and will do the job of computing the prime
