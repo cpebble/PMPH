@@ -56,7 +56,7 @@ let primesFlat (n : i32) : []i32 =
       let p_inds = scan (+) 0 flags
       let p_expanded = map (\i -> sq_primes[i]) p_inds
       
-      let not_primes = map (\(j, p) -> j*p) (zip mm1sp2 p_expanded)
+      let not_primes = map2 (*) mm1sp2 p_expanded
       --let inners = map (\mm1 -> (\j -> j * p) (map (+2) (iota mm1))) mm1s
 
       
