@@ -709,3 +709,189 @@ We implement it in two sweeps. Blelloch scan
 To perform the exclusive scan across each block we perform excls scan on every block
 then we get a list of reductions over each block(get the last element) and map that
 to every scan
+* 29/09 Memory hierarchy
+Memory and cache are consistent between warps.  
+If someone changes these caches, we need to ensure consistency.
+
+** Locality Principle
+- A small set of adresses acessed at a time, named /working set/ => Low miss rate
+- When program transitions => Abru[t change of working sets => High miss rate
+Avoid abrupt transitions to improve optimisations based on these locality assumptions
+
+***  Spatial locality
+If i'm accessing some bytes, i will likely read the next bytes afterwards at some point.
+
+*** Temporal locality
+If i'm accessing some bytes, i might read them again soon
+
+
+When  working with the memory hierarchy, you get the illusion of a monolithic
+memory of lowest cost, largest capacity and fastest average access time.  
+Even though you might have multiple caches, the executing program doesn't see this.
+
+** Cache Mapping
+Cache behavior mostly dictated by cache size and /The mapping/ of memory blocks
+to cache lines. You can have direct, set-associative and full-associative mappings.
+Each memory block has the adress:
+
+| Memory block adress | Block offset |
+| TAG  | Cache index  | Block offset |
+
+Two phases:
+- Cache index: Use index bits to fetch tags and data from the set
+- Tag check: Check tag to detect hit/miss(and status)
+
+Cache structure:
+- Data memory: The cached copy of memory block
+- Directory memory: One entry per cache line containing TAG and status bits
+
+*** Direct-mapped Cache
+A memory block is always mapped in the same cache line, of index 
+=block address % number of cache lines = index=
+
+ .+ Fast access time on a hit
+ .- Several memory blocks competing for same line gives us a high miss rate.
+
+E.g. when looping over a matrix with width = number of cache lines, each access would
+overwrite a block
+
+*** Set-Associative Cache
+You have a choice where to place a memory block. You take several directly mapped caches and
+put them together. That is the degree of associativity.
+
+- Access to each set is directly mapped but
+- A block mapped to a set can reside anywhere in the set.
+**** Read/write
+- Read requires only one cycle: all 3 directory and data entries are fetched in a
+  parallel, then the tag is compared in parallel with the tag bits of each slice.
+  If any of the comparisons succeed, then we have a hit.
+- Write requires at least two mem cycles(but can be pipelined): One to check the
+  hit or miss, and then one to write into data memory
+
+*** Full-associative cache
+[[Images/Full_assoc_cache.png][Fully Associative Cache]]
+A very different structure than others. To find the block, all directories must be checked
+in parrallel. We split the read into two cycles: 
+1. (Parallel) To find the cache line and check hit
+2. To actually read
+
+On a match, the row line is activated and the data returned.
+
+Small Caches: intuition says they should be fully associative because
+the potential for conflict in hot sets is damaging to performance  
+(The cons: 2 cycles for load: slower and less dense)
+
+
+*** Replacement Policies
+1. Random
+2. Least recently used
+3. FIFO
+4. Pseudo-LRU
+For (almost) all, need to maintain replacement bits.
+
+For Directly mapped caches, there is no need.  
+For set-fully associative we need to maintain bits per set/cache
+
+*** Write policies
+**** Write through.
+- Write to next level on all writes
+- Use a write buffer to avoid stalls: Loads must check the buffer first
+- Used for small 1st-level caches
+- /Simple, no inconsistency on levels/
+- *buT* Large store traffic.
+
+We have a choice on whether to write our data to l1 or to write through to l2
+**** Write back
+Writing to the next level of cache, only upon eviction from l1. So we can write
+and modify the value in l1 multiple times, and upon eviciton the result gets saved.  
+(Would be efficient for e.g. modifying strings)  
+Uses a dirty bit(db) & write-back buffer.
+- Block is loaded/modified => db reset/set
+- Block is evicted => if db set then written
+- Write happens only on a miss
+- In both cases a load checks the buffer first(consistency)
+- Write miss: Always allocate on write
+
+*** Classification of cache misses
+The four Cs
+- Cold misses(Compulsory e.g. you have to hit these): First reference of a block
+- Capacity misses: corresponds to the cache not being big enough
+- Conflict: two memory blocks map to the same cache line
+- Coherence: Anothere thread has modified the needed value
+
+*How to measure them*  in a hardware emulator
+- Cold: simulate infinity mem-size(every hit will be cold)
+- Capa: Simulate fully-assoc cache and subtract cold misses
+- Conflict Simulate cache and subtract cold and capa misses
+
+*** Multi-level cache hierarchies
+We assume Cache Inclusion: A block
+- Misses in L_i => Must be brought into all L_j, j > i
+- Is replaced in L_j => Must be removed in all L_i, j > i
+- Replication but good for coherence.  
+
+Can also be Exclusion(*Not used in practice*)
+- If in L_i => Not in any other level
+- Misses in L_i, all copies removed from all levels > i
+- Replaced in L_j => allocated in j+1
+- Size is the sum of caches but horrible for coherence
+
+**** Params: 
+Larger block size:
+- Exploit spatial locality
+- If block size too big: Increases capacity misses(less blocks in same amount of memory)
+- Increases miss penalty
+
+Higher set associativity(SA):
+- Reduce number of conflict misses;
+- Increase hit latency
+- 8-16 ways SA as good as fully associative
+- A 2-way SA cache of size N has a similar miss rate with a direct
+  mapped of size 2xN
+
+*** Lockup-free Caches
+Two-ported device:
+- C_pc : cache to processor interface
+- C_cm : Cache to memory interface
+
+*** TODO Princeton vs Harvard Cache
+
+*** What should the first-level cache be?
+keep it simple and fast:
+- Favors direct-mapped:
+  - Less multiplexing
+  - Overlap of tag and use of data
+- Interestingly, the size of FLC tends to decrease and associativity
+  goes up as FLCs try to keep up with CPU
+
+** Cache coherency
+Processors interact with memory via Processors and Memory seperated by a bus.
+
+Not realistic though. We want to keep latency small, so we have a shared cache
+between processor and bus.  
+.+ Constructive sharing of cache resources
+.- Interconnect latency added to the critical memory access path
+
+
+Private Cache on proc side:  
+Every processor is connected to memory and bus /via/ a private cache  
+
+Hybrid private-shared cache:  
+Memory -> Shared cache -> Bus -> Private cache -> Processor
+
+*** Informal definition
+#+BEGIN_SRC definition : Sequential Cache Coherence
+A load must return the value of the latest store in process order to
+the same adress(Simple but check the write buffers
+#+END_SRC
+
+#+BEGIN_SRC definition : Cache Coherence in Multiprocessors
+A cache system is cache coherent /iff/ all processors, at any time, have a
+consistent view of the last globally written value to each location
+#+END_SRC
+
+We want to minimize the impact of the coherence protocol to minimize latency.
+We want to assume all reads are hits(because optimise), so we don't want
+to run coherence every read.
+
+Must be solved in hardware

@@ -38,8 +38,7 @@ let primesFlat (n : i32) : []i32 =
       --   let not_primes = reduce (++) [] composite
       --
       -- I need to unwrap mm1s
-      let mm1s = map (\p -> (len / p) - 1) sq_primes
-      -- Calculate length of sq_prime
+      let mm1s = map (\p -> (len / p) - 1) sq_primes -- Calculate length of sq_prime
       --let sq_prime_zeros = map (\p -> 1) sq_primes
       --let sq_prime_len = reduce (+) 0 sq_prime_zeros
       -- Create flag arr

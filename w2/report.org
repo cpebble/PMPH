@@ -72,6 +72,21 @@ The speedup is easily viewable in tests above, while no significant speedup
 is seen in the Int32 operators. I assume this is because only those functions
 make efficient use of the Global vs Shared memory
 
+** Resubmission
+For the resubmission of this task i want to describe the methodology of these benchmarks.  
+All of the tests described above have been run on the =gpu04= machine with the
+following stats:
+#+BEGIN_SRC 
+Device name: GeForce RTX 2080 Ti
+Number of hardware threads: 69632
+Max block size: 1024
+Shared memory size: 49152
+#+END_SRC
+To run the benchmarks, i use the =test-pbb= executable with an array length
+of 50003565 and a block size of 128. Later on when testing the race condition
+that occurs, i set the block size to 1024, however to avoid exhausting gpu resources
+all other benchmarks run with a blocksize of 128.
+
 * Task 3: Scanning reimagined
 In this task i implement a parallel inclusive scan at WARP level. The algorithm
 to be implemented is explained in detail in the lecture notes for the second 
