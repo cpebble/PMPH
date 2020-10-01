@@ -84,13 +84,13 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
         cs[i] = 0;
     }
     // So now we add the sequential K loop that actually does "something"
-    for(int kk = 0; kk < widthA; kk++){
+    for(int kk = 0; kk < widthA; k +=T ){
         // Copy the array slice A[ii:ii+T, j] into shared memory
         // Then synchronize
         for (int k = 0; k < T; k++) {
             float b = B[k,j];
             for(int i = 0; i < T; i++){
-                cs[i] += A[i+ii][k] * b;
+                cs[i] += A[i+ii][k+kk] * b;
             }
         }
     }
