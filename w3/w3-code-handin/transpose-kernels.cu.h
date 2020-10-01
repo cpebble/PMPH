@@ -77,7 +77,7 @@ origProg(float* A, float* B, unsigned int N) {
 __global__ void 
 transfProg(float* Atr, float* Btr, unsigned int N) {
     unsigned int gid = (blockIdx.x * blockDim.x + threadIdx.x);
-    if(gid >= N) return;
+    if(gid >= N*64) return;
     float accum = 0.0;
     unsigned int thd_offs = gid * N;
 
