@@ -90,7 +90,7 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
         for (int k = 0; k < T; k++) {
             float b = B[k,j];
             for(int i = 0; i < T; i++){
-                cs[i] += A[i+ii][k] * b
+                cs[i] += A[i+ii][k] * b;
             }
         }
     }
