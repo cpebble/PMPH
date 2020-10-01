@@ -181,7 +181,7 @@ int weekly3Task3( int height
         // Task3.a) ToDo: 
         //       - fill in the implementation CPU orchestration code below
         //       - and the corresponding CUDA kernel!
-        for (int kkk = 0; kkk < REPEAT; kkk++) {
+        for (int kkk = 0; kkk < 1; kkk++){//REPEAT; kkk++) {
             // 3.a.1  you probably need to transpose d_A here by
             //        using function "transposeTiled<float, TILE>"
             //        i.e., source array is d_A, result array is d_Atr
