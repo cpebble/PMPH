@@ -1,0 +1,151 @@
+#+TITLE:Weekly assignment 3
+* TODO Task 1: Dependency-analysis transformations 
+I consider the following pseudocode
+#+BEGIN_SRC c
+float A[2*M];
+
+for (int i = 0; i < N; i++) {
+    A[0] = N;
+
+    for (int k = 1; k < 2*M; k++) {
+        A[k] = sqrt(A[k-1] * i * k);
+    }
+
+    for (int j = 0; j < M; j++) {
+        B[i+1, j+1] = B[i, j] * A[2*j  ];
+        C[i,   j+1] = C[i, j] * A[2*j+1];
+    }
+}
+#+END_SRC
+And answer the following questions:
+** Why neither the outer loop nor the inner loops are parallel
+First off, we look at the inner loops:  
+Section 5.2 of the lecture notes start off:
+#+BEGIN_SRC quote
+A loop is said to be parallel if its execution does not cause any (true, anti or output) dependencies
+#+END_SRC
+We see easily the first loop =k in 0,...,2*M= that there is a RAW dependency
+In that $A[k_b]$ is read in the next iteration when $k_a = k_b + 1$.
+For the next loop, we also see dependencies in the next inner loop in B and C.
+
+For the outer loop i present the case of accesses to B, with the
+following iterations (i_1, j_1), (i_2, j_2) reads from and writes to the same element.
+We get the equation system: $i_1 + 1 = i_2, j_1 + 1 = j_21$, which neccesarily means:
+$i_1 < i_2, j_1 < j_2$ giving us a well-formed direction vector =[<,<]= and a RAW 
+dependency, and thus the outside isn't parallel by theorem 6
+
+** Why it is safe to privatize =A=
+It is safe to privatize =A= Since we use a unique =A= In every iteration, e.g. every iteration
+=A= is initialized to the following: =A[k] = sqrt(A[k-1] * i * k)=. We Set up the following
+code:
+#+BEGIN_SRC c
+float A[2*M];
+float A_[2*M];
+for (int i = 0; i < N; i++) {
+    float A_[2*M];
+/*S1:*/A_[0] = N;
+
+    for (int k = 1; k < 2*M; k++) {
+/*S2:*/A_[k] = sqrt(A_[k-1] * i * k);
+    }
+
+    for (int j = 0; j < M; j++) {
+/*S3:*/B[i+1, j+1] = B[i, j] * A_[2*j  ];
+/*S4:*/C[i,   j+1] = C[i, j] * A_[2*j+1];
+    }
+}
+for (int i = 0; i < 2*M; i++){
+    A[i] = A_[i];
+}
+#+END_SRC
+** Why it is safe to distribute the outermost loop across the =A[0] = N;= statement, along with the two inner loops
+I look at the dependencies in the graph:  
+- S1 has no dependencies, since A_ is a new array
+- S2 has a RAW dependency with S2 [=, <]
+- S3 has a dependency on S3 [<, <]  
+  - Iter (i_1, j_1) writes to B[i+1, j+1]. Iter (i_2, j_2) reads from B[i, j].
+  For these to write to the same memory adress, the following holds:
+#+BEGIN_SRC 
+i_1 + 1 = i_2
+j_1 + 1 = i_2
+=>
+i_1 < i_2
+j_1 < j_2
+#+END_SRC
+- S4 has a dependency on S4 [=, <]
+  - Iter (i_1, j_1) writes to C[i, j+1], Iter (i_2, j_2) Reads from C[i, j]. The following holds
+#+BEGIN_SRC 
+i_1 = i_2
+j_1 + 1 = j_2
+=>
+i_1 = i_2
+j_1 < j_2
+#+END_SRC
+- S3 has a dependency on S2:  
+** Using direction vectors, Determine which loops are parallel
+** Can loop interchange be applied?
+* Task 2: Parallel operator intuitionj
+We look at the pseudocode:
+#+BEGIN_SRC c
+float A[N,64];
+float B[N,64];
+float accum, tmpA;
+for (int i = 0; i < N; i++) { // outer loop
+/*S0*/accum = 0;
+    for (int j = 0; j < 64; j++) { // inner loop
+/*S1*/  tmpA = A[i, j];
+/*S2*/  accum = sqrt(accum) + tmpA*tmpA; // (**)
+/*S3*/  B[i,j] = accum;
+    }
+}
+#+END_SRC
+** Is the outer loop parallel?
+The outer loop has a dependency.  
+With Accum being written to multiple times in each iteration, we see
+it form a WAW dependency, and therefore by thm. 6 it cannot be parallel.
+
+** What technique can be used to make it parallel?
+Array Expansion(Privatization)
+#+BEGIN_SRC c
+float A[N,64];
+float B[N,64];
+float Accum[N];
+float accum, tmpA;
+for (int i = 0; i < N; i++) { // outer loop
+    Accum[i] = 0;
+    for (int j = 0; j < 64; j++) { // inner loop
+/*S1*/  tmpA = A[i, j];
+/*S2*/  Accum[i] = sqrt(Accum[i]) + tmpA*tmpA; // (**)
+/*S3*/  B[i,j] = Accum[i];
+    }
+}
+accum = Accum[N-1];
+#+END_SRC
+
+** Is the inner loop parallel
+Looking at S2, we get the following dependency vector:
+#+BEGIN_SRC 
+S2 accum
+i_1, j_1 reads accum
+i_2, j_2 writes accum
+i_1 = i_2
+j_1 < j_2
+deps = [=, <]
+#+END_SRC
+By Thm. 6 this loop isn't parallel
+
+** Write the loop nest using parallel operators
+We realize that each row in B is equivalent to scanning a squared row in map. Intuitively
+we also realize that we want at least two maps, one for the outer loop, and one for the inner
+loop. I produce the following output:
+#+BEGIN_SRC futhark
+map (\A_i -> scan (+) 0 (map (\x -> x*x) A_i ) A
+#+END_SRC
+We verify this using the futhark repl, and a compiled c version beside it. It is tested using
+#+BEGIN_SRC futhark
+main (replicate 3 (0...63) :> [3][64]i32)
+#+END_SRC
+Recognizing that there will never occur a value not representable by i32 in the given
+range. The code output matches that of an optimised C program
+* TASK 3: Spatial locality optimizing in CUDA
+* Task 4: Matrix-Matrix Multiplication in CUDA
