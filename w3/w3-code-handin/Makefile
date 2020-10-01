@@ -1,4 +1,4 @@
-CXX        = nvcc -O3 -arch=compute_35
+CXX        = nvcc -O3 -arch=compute_35 -Wno-deprecated-gpu-targets
 
 SRC1 = transpose-main.cu
 SRC2 = mmm-main.cu

@@ -216,51 +216,51 @@ int weekly3Task3( int height
         cudaFree(d_Btr);
    }
 
-    { // Optimized program---i.e., exhibiting only coalesced 
-      // accesses---obtained by using the shared memory as
-      // a staging buffer, i.e., read from global-to-shared
-      // memory (in coalesced way) and then each thread reads
-      // from shared memory in non-coalesced way. Note that
-      // this version should be the fastest, as it does not
-      // require to perform (manifest) the transpositions
-      // (in global memory).
-      // 
-      // Task 3.b) implement function "glb2shmem" in file
-      //           "transpose-kernels.cu.h"
-        cudaMemset(d_B, 0, mem_size);
-
-        unsigned long int elapsed;
-        struct timeval t_start, t_end, t_diff;
-        gettimeofday(&t_start, NULL); 
-
-        unsigned int num_thds= height;
-        unsigned int block   = 256;
-        unsigned int grid    = (num_thds + block - 1) / block;
-        const int CHUNK = 16;
-
-        if((block % CHUNK) != 0) {
-            printf("Broken Assumption: block size not a multiple of chunk size, EXITING!\n");
-            exit(1);
-        }
-
-        for (int kkk = 0; kkk < REPEAT; kkk++) {
-            optimProg<CHUNK><<<grid, block, CHUNK*block*sizeof(float)>>>(d_A, d_B, num_thds);
-        }
-        cudaDeviceSynchronize();
-
-        gettimeofday(&t_end, NULL);
-        timeval_subtract(&t_diff, &t_end, &t_start);
-        elapsed = (t_diff.tv_sec*1e6+t_diff.tv_usec) / REPEAT; 
-        gigaBytesPerSec = 2 * mem_size * 1.0e-3f / elapsed;
-        printf("Optimized Program runs on GPU in: %lu microsecs, GB/sec: %f\n", elapsed, gigaBytesPerSec);
-
-        gpuAssert( cudaPeekAtLastError() );
-
-        // copy result from device to host
-        cudaMemcpy(h_B, d_B, mem_size, cudaMemcpyDeviceToHost);
-        cudaMemset(d_B, 0, mem_size);
-        validateProgram(h_A, h_B, num_thds);
-    }
+    //{ // Optimized program---i.e., exhibiting only coalesced 
+      //// accesses---obtained by using the shared memory as
+      //// a staging buffer, i.e., read from global-to-shared
+      //// memory (in coalesced way) and then each thread reads
+      //// from shared memory in non-coalesced way. Note that
+      //// this version should be the fastest, as it does not
+      //// require to perform (manifest) the transpositions
+      //// (in global memory).
+      //// 
+      //// Task 3.b) implement function "glb2shmem" in file
+      ////           "transpose-kernels.cu.h"
+        //cudaMemset(d_B, 0, mem_size);
+//
+        //unsigned long int elapsed;
+        //struct timeval t_start, t_end, t_diff;
+        //gettimeofday(&t_start, NULL); 
+//
+        //unsigned int num_thds= height;
+        //unsigned int block   = 256;
+        //unsigned int grid    = (num_thds + block - 1) / block;
+        //const int CHUNK = 16;
+//
+        //if((block % CHUNK) != 0) {
+            //printf("Broken Assumption: block size not a multiple of chunk size, EXITING!\n");
+            //exit(1);
+        //}
+//
+        //for (int kkk = 0; kkk < REPEAT; kkk++) {
+            //optimProg<CHUNK><<<grid, block, CHUNK*block*sizeof(float)>>>(d_A, d_B, num_thds);
+        //}
+        //cudaDeviceSynchronize();
+//
+        //gettimeofday(&t_end, NULL);
+        //timeval_subtract(&t_diff, &t_end, &t_start);
+        //elapsed = (t_diff.tv_sec*1e6+t_diff.tv_usec) / REPEAT; 
+        //gigaBytesPerSec = 2 * mem_size * 1.0e-3f / elapsed;
+        //printf("Optimized Program runs on GPU in: %lu microsecs, GB/sec: %f\n", elapsed, gigaBytesPerSec);
+//
+        //gpuAssert( cudaPeekAtLastError() );
+//
+        //// copy result from device to host
+        //cudaMemcpy(h_B, d_B, mem_size, cudaMemcpyDeviceToHost);
+        //cudaMemset(d_B, 0, mem_size);
+        //validateProgram(h_A, h_B, num_thds);
+    //}
     return 0;
 }
 
