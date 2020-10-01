@@ -71,6 +71,33 @@ template <class ElTp, int T>
 __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int widthB, int widthA) {
     // ToDo: fill in the kernel implementation of register+block tiled 
     //       matrix-matrix multiplication here
+    // If i don't make it, tell my wife i love her
+    int ii = blockIdx.y;
+    int j__= blockIdx.x;
+    int j = threadIdx.x + blockIdx.x*blockDim.x;
+    ElTp cs[T];
+    // Normalized form of
+    // for (i = ii; i < min(ii+T, M); i++){
+    //   cs[(j_ - j__) / T][j - j__][i-ii] = 0;
+    // }
+    for (int i = 0; i < T; i++){
+        cs[i] = 0;
+    }
+    // So now we add the sequential K loop that actually does "something"
+    for(int kk = 0; kk < widthA){
+        // Copy the array slice A[ii:ii+T, j] into shared memory
+        // Then synchronize
+        for (int k = 0; k < T; k++) {
+            float b = B[k,j];
+            for(int i = 0; i < T; i++){
+                cs[i] += A[i+ii][k] * b
+            }
+        }
+    }
+    for(int i = 0; i < T; i++){
+        C[i+ii][j] = cs[i];
+    }
+
 }
 
 
