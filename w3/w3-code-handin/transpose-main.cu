@@ -181,7 +181,7 @@ int weekly3Task3( int height
         // Task3.a) ToDo: 
         //       - fill in the implementation CPU orchestration code below
         //       - and the corresponding CUDA kernel!
-        for (int kkk = 0; kkk < 1; kkk++){//REPEAT; kkk++) {
+        for (int kkk = 0; kkk < REPEAT; kkk++) {
             // 3.a.1  you probably need to transpose d_A here by
             //        using function "transposeTiled<float, TILE>"
             //        i.e., source array is d_A, result array is d_Atr
@@ -190,8 +190,6 @@ int weekly3Task3( int height
             //        kernel in file transpose-kernel.cu.h which takes 
             //        input from d_Atr, and writes the result in d_Btr,
             transfProg<<< num_blocks, block >>>(d_Atr, d_Btr, num_thds);
-            cudaDeviceSynchronize();
-            gpuAssert( cudaPeekAtLastError() );
             // 3.a.3  you probably need to transpose-back the result here
             //        i.e., source array is d_Btr, and transposed result
             //        is in d_B.
