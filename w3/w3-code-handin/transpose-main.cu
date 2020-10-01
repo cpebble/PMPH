@@ -190,10 +190,12 @@ int weekly3Task3( int height
             //        kernel in file transpose-kernel.cu.h which takes 
             //        input from d_Atr, and writes the result in d_Btr,
             transfProg<<< num_blocks, block >>>(d_Atr, d_Btr, num_thds);
+            gpuAssert( cudaPeekAtLastError() );
             // 3.a.3  you probably need to transpose-back the result here
             //        i.e., source array is d_Btr, and transposed result
             //        is in d_B.
             transposeTiled<float, TILE>(d_Btr, d_B, WIDTH_A, HEIGHT_A);
+            gpuAssert( cudaPeekAtLastError() );
         }
         cudaDeviceSynchronize();
 
