@@ -88,14 +88,14 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
         // Copy the array slice A[ii:ii+T, j] into shared memory
         // Then synchronize
         for (int k = 0; k < T; k++) {
-            float b = B[k,j];
+            float b = B[k+j];
             for(int i = 0; i < T; i++){
-                cs[i] += A[i+ii][k+kk] * b;
+                cs[i] += A[i+ii + k+kk] * b;
             }
         }
     }
     for(int i = 0; i < T; i++){
-        C[i+ii][j] = cs[i];
+        C[i+ii + j] = cs[i];
     }
 
 }
