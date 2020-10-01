@@ -195,7 +195,6 @@ int weekly3Task3( int height
             //        i.e., source array is d_Btr, and transposed result
             //        is in d_B.
             transposeTiled<float, TILE>(d_Btr, d_B, WIDTH_A, HEIGHT_A);
-            gpuAssert( cudaPeekAtLastError() );
         }
         cudaDeviceSynchronize();
 
