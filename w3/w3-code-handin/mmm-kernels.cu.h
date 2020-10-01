@@ -75,6 +75,10 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
     int ii = blockIdx.y;
     int j__= blockIdx.x;
     int j = threadIdx.x + blockIdx.x*blockDim.x;
+    int gidx = threadIdx.x + blockIdx.x*blockDim.x;
+    int gidy = threadIdx.y + blockIdx.y*blockDim.y;
+    int tidy = threadIdx.x, tidx = threadIdx.x;
+    __shared__ float Ash[T][T];
     ElTp cs[T];
     // Normalized form of
     // for (i = ii; i < min(ii+T, M); i++){
@@ -86,11 +90,14 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
     // So now we add the sequential K loop that actually does "something"
     for(int kk = 0; kk < widthA; kk +=T ){
         // Copy the array slice A[ii:ii+T, j] into shared memory
+        Ash[threadIdx.y][threadIdx.x] = ((gidy < heightA) && (kk+threadIdx.x < widthA)) ?
+            A[gidy*widthA + kk + threadIdx.x] : 0.0;
+        __syncthreads();
         // Then synchronize
         for (int k = 0; k < T; k++) {
-            float b = B[k+j];
+            float b = B[kk+k+j];
             for(int i = 0; i < T; i++){
-                cs[i] += A[i+ii + k+kk] * b;
+                cs[i] += Ash[i][k] * b;
             }
         }
     }
