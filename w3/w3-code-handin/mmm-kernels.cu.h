@@ -80,10 +80,7 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
     int tidy = threadIdx.x, tidx = threadIdx.x;
     __shared__ float Ash[T][T];
     ElTp cs[T];
-    // Normalized form of
-    // for (i = ii; i < min(ii+T, M); i++){
-    //   cs[(j_ - j__) / T][j - j__][i-ii] = 0;
-    // }
+
     for (int i = 0; i < T; i++){
         cs[i] = 0;
     }
@@ -102,7 +99,8 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
         }
     }
     for(int i = 0; i < T; i++){
-        C[i+ii + j] = cs[i];
+        if (gidx < widthB) && ((gidy+i) < heightA)
+        C[((gidy + i) * widthB) + gidx] = cs[i];
     }
 
 }
