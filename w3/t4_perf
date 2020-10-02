@@ -1,0 +1,11 @@
+./assignm3-task4
+Sequential Naive version runs in: 4663266 microsecs
+GPU Naive MMM version ... VALID RESULT!
+GPU Naive MMM version runs in: 14640 microsecs
+GPU Naive MMM Performance= 1173.49 GFlop/s, Time= 14640.000 microsec 128 128
+GPU Block-Tiled MMM version ... VALID RESULT!
+GPU Block-Tiled MMM version runs in: 11718 microsecs
+GPU Block-Tiled MMM Performance= 1466.11 GFlop/s, Time= 11718.000 microsec 128 128
+GPU Block+Register Tiled MMM version ... VALID RESULT!
+GPU Block+Register Tiled MMM version runs in: 2860 microsecs
+GPU Block+Register Tiled MMM Performance= 6006.95 GFlop/s, Time= 2860.000 microsec 8 128
