@@ -71,16 +71,19 @@ template <class ElTp, int T>
 __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int widthB, int widthA) {
     // ToDo: fill in the kernel implementation of register+block tiled 
     //       matrix-matrix multiplication here
-    // If i don't make it, tell my wife i love her
-    int ii = blockIdx.y;
-    int j__= blockIdx.x;
-    int j = threadIdx.x + blockIdx.x*blockDim.x;
+    // These calculations are wrong
+    int ii = blockIdx.y * T;
+    int j__= blockIdx.x * T * T;
+    int i; // Altid sequential
+    int j_ = (threadIdx.y*T) + j__;
+    int j  = j_ + threadIdx.x;
     int gidx = threadIdx.x + blockIdx.x*blockDim.x;
     int gidy = threadIdx.y + blockIdx.y*blockDim.y;
-    int tidy = threadIdx.x, tidx = threadIdx.x;
+    int tidy = threadIdx.y, tidx = threadIdx.x;
     __shared__ float Ash[T][T];
     ElTp cs[T];
-
+    // printf("%d: %d \n", j, gidy);
+    #pragma unroll
     for (int i = 0; i < T; i++){
         cs[i] = 0;
     }
@@ -88,24 +91,30 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
     // So now we add the sequential K loop that actually does "something"
     for(int kk = 0; kk < widthA; kk +=T ){
         // Copy the array slice A[ii:ii+T, j] into shared memory
-        if (gidx < widthB && gidy < heightA)
-            Ash[tidy][tidx] = A[gidx + (gidy*widthA)];
+        if ((kk+tidx) < widthB && gidy < heightA)
+            Ash[tidy][tidx] = A[(kk+tidx) + (gidy*widthA)];
         else
             Ash[tidy][tidx] = 0.0f;
 
         __syncthreads();
         // Then synchronize
         for (int k = 0; k < T; k++) {
-            float b = B[(kk+k)*widthB+gidy];
+            float b;
+            if (kk+k < widthA && j < widthB)
+                b = B[(kk+k)*widthB+(j)];
+            else
+                b = 0.0f;
+            #pragma unroll
             for(int i = 0; i < T; i++){
                 cs[i] += Ash[i][k] * b;
             }
         }
         __syncthreads();
     }
+    #pragma unroll
     for(int i = 0; i < T; i++){
-        if ((gidx < widthB) && ((gidy+i) < heightA)){
-            C[((gidy + i) * widthB) + gidx] = cs[i];
+        if ((ii + i < heightA) && (j < widthB)){
+            C[((ii + i) * widthB) + j] = cs[i];
         }
     }
 
