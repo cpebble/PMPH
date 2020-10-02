@@ -89,7 +89,7 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
     for(int kk = 0; kk < widthA; kk +=T ){
         // Copy the array slice A[ii:ii+T, j] into shared memory
         if (gidx < widthB && gidy < heightA)
-            Ash[tidy][tidx] = A[gidx + gidy];
+            Ash[tidy][tidx] = A[gidx + (gidy*WidthA)];
         else
             Ash[tidy][tidx] = 0.0f;
 
