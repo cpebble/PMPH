@@ -84,6 +84,7 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
     for (int i = 0; i < T; i++){
         cs[i] = 0;
     }
+    __syncthreads();
     // So now we add the sequential K loop that actually does "something"
     for(int kk = 0; kk < widthA; kk +=T ){
         // Copy the array slice A[ii:ii+T, j] into shared memory
@@ -100,6 +101,7 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
                 cs[i] += Ash[i][k] * b;
             }
         }
+        __syncthreads();
     }
     for(int i = 0; i < T; i++){
         if ((gidx < widthB) && ((gidy+i) < heightA)){
