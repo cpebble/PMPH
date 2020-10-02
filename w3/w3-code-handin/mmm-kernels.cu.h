@@ -99,8 +99,9 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
         }
     }
     for(int i = 0; i < T; i++){
-        if (gidx < widthB) && ((gidy+i) < heightA)
-        C[((gidy + i) * widthB) + gidx] = cs[i];
+        if (gidx < widthB) && ((gidy+i) < heightA){
+            C[((gidy + i) * widthB) + gidx] = cs[i];
+        }
     }
 
 }
