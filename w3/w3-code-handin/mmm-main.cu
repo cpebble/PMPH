@@ -113,7 +113,6 @@ int main() {
    }
 
    
-   #if 0
    // execute the naive kernel
    {
       // setup execution parameters
@@ -183,7 +182,6 @@ int main() {
       printf( "GPU Block-Tiled MMM Performance= %.2f GFlop/s, Time= %.3f microsec %d %d\n", gigaFlops, microsecPerMatrixMul, grid.x, grid.y); 
       cudaMemset(d_C, 0, mem_size_C);
    }
-   #else
 
    // execute the block+register tiled kernel
    // ToDo: please fill in the implementation below
@@ -191,7 +189,7 @@ int main() {
    {
       // 1. you would probably want to compute some valid grid and block here
       int  dimy = ceil( ((float)HEIGHT_A)/TILE ); 
-      int  dimx = ceil( ((float) WIDTH_B)/TILE );
+      int  dimx = ceil( ((float) WIDTH_B)/(TILE*TILE) );
       dim3 block(TILE, TILE, 1);
       dim3 grid (dimx, dimy, 1);
 
@@ -222,7 +220,6 @@ int main() {
       double gigaFlops = (flopsPerMatrixMul * 1.0e-9f) / (microsecPerMatrixMul / (1000.0f * 1000.0f)); 
       printf( "GPU Block+Register Tiled MMM Performance= %.2f GFlop/s, Time= %.3f microsec %d %d\n", gigaFlops, microsecPerMatrixMul, grid.x, grid.y); 
    }
-   #endif
 
    // 7. clean up memory
    free(h_A);
