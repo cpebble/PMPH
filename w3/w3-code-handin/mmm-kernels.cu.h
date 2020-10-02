@@ -87,11 +87,11 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
     // So now we add the sequential K loop that actually does "something"
     for(int kk = 0; kk < widthA; kk +=T ){
         // Copy the array slice A[ii:ii+T, j] into shared memory
-        //
-        if (tidy >= 16){
-            printf("YOU WRONG NIGGA. %d\n", tidy);
-        }
-        Ash[tidy][tidx] = A[0];
+        if (gidx < widthB && gidy < heightA)
+            Ash[tidy][tidx] = A[gidx + gidy];
+        else
+            Ash[tidy][tidx] = 0.0f;
+
         __syncthreads();
         // Then synchronize
         for (int k = 0; k < T; k++) {
