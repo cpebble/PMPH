@@ -96,7 +96,7 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
         __syncthreads();
         // Then synchronize
         for (int k = 0; k < T; k++) {
-            float b = B[(kk+k)*widthB+gidx];
+            float b = B[(kk+k)*widthB+gidy];
             for(int i = 0; i < T; i++){
                 cs[i] += Ash[i][k] * b;
             }
