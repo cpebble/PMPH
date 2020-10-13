@@ -1,4 +1,4 @@
-% Created 2020-09-18 Fri 02:53
+% Created 2020-10-02 Fri 16:36
 % Intended LaTeX compiler: pdflatex
 \documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
@@ -14,11 +14,10 @@
 \usepackage{amssymb}
 \usepackage{capt-of}
 \usepackage{hyperref}
-\author{Christian P.}
 \date{\today}
 \title{Weekly assignment 2}
 \hypersetup{
- pdfauthor={Christian P.},
+ pdfauthor={},
  pdftitle={Weekly assignment 2},
  pdfkeywords={},
  pdfsubject={},
@@ -29,8 +28,63 @@
 \maketitle
 \tableofcontents
 
+\section{Task 1: Flattened Prime computation}
+\label{sec:orgcd0d119}
+I flattened the prime algorithm into the following futhark(only included
+is the parts we neede to write ourselves, the whole file can be seen in
+\texttt{primes-flat.fut} in the code handin) 
+\begin{verbatim}
+-- I need to unwrap mm1s
+let mm1s = map (\p -> (len / p) - 1) sq_primes 
+-- Create flag arr
+let inds = scan (+) 0 mm1s
+let mm1s_rot = map (\i -> if i == 0 then 0 else inds[i-1]) (indices sq_primes)
+let flags = scatter (replicate flat_size 0) inds sq_primes
+-- Finally unroll the iota in map
+let mm1s_tmp = replicate flat_size 1
+let mm1s_flat = sgmSumI32 flags mm1s_tmp
+-- flat list of [2..m]
+let mm1sp2 = map (+1) mm1s_flat
+-- I need to replicate all of sq_prime inds times
+-- I can use the flags array to get the indexes of "new" primes
+let flags_ones = map (\x -> if x == 0 then 0 else 1) flags
+let p_inds = scan (+) 0 flags_ones
+let p_expanded = map (\i -> sq_primes[i]) p_inds
+
+let not_primes = map2 (*) mm1sp2 p_expanded
+
+\end{verbatim}
+
+\subsection{Speedups:}
+\label{sec:org5b828b3}
+On the GPU04 machine i ran:
+\begin{verbatim}
+[wbr220@a00333 primes-futhark]$ futhark c primes-naive.fut
+[wbr220@a00333 primes-futhark]$ futhark c primes-seq.fut
+[wbr220@a00333 primes-futhark]$ futhark opencl primes-naive.fut -o primes-naive-opencl
+[wbr220@a00333 primes-futhark]$ futhark opencl primes-flat.fut
+[wbr220@a00333 primes-futhark]$ echo "1000000" | ./primes-naive -t /dev/stderr -r 10 > /dev/null
+6909
+...
+6974
+[wbr220@a00333 primes-futhark]$ echo "1000000" | ./primes-seq -t /dev/stderr -r 10 > /dev/null
+17923
+...
+18639
+[wbr220@a00333 primes-futhark]$ echo "1000000" | ./primes-naive-opencl -t /dev/stderr -r 10 > /dev/null
+10669
+...
+10629
+[wbr220@a00333 primes-futhark]$ echo "1000000" | ./primes-flat -t /dev/stderr -r 10 > /dev/null
+1174
+...
+1139
+\end{verbatim}
+And as expected, the flat version computes much faster than its counterparts.
+Noted as the slowest is the sequential version, calculating on the c backend,
+which is also expected.
 \section{Task 2: MemCpy but faster}
-\label{sec:org791fe0c}
+\label{sec:org4565838}
 In this task i am asked to improve a written "Copy from/to Global memory from/to Shared memory.  
 The given function(and replacement) is shown below:
 \begin{verbatim}
@@ -66,9 +120,9 @@ being added to the threadIds in every warp. Thus every thread in the warp will f
 a constant and it's id, resulting in 32 sequential integers being fetched from
 memory. Thus we get the added coalescence bonus.
 \subsection{Performance speedup:}
-\label{sec:orgb230591}
+\label{sec:org358c598}
 \subsubsection{The slow version}
-\label{sec:orgc39250c}
+\label{sec:orgc435538}
 \begin{verbatim}
 [wbr220@a00333 cuda]$ make
 ...
@@ -85,7 +139,7 @@ SgmScan Inclusive AddI32 CPU Sequential runs in: 147676 microsecs, GB/sec: 2.71
 SgmScan Inclusive AddI32: VALID result!
 \end{verbatim}
 \subsubsection{The fast version}
-\label{sec:orged47846}
+\label{sec:orgdb999e9}
 \begin{verbatim}
 [wbr220@a00333 cuda]$ make
 ...
@@ -102,13 +156,29 @@ SgmScan Inclusive AddI32 CPU Sequential runs in: 145349 microsecs, GB/sec: 2.75
 SgmScan Inclusive AddI32: VALID result!
 \end{verbatim}
 \subsubsection{Conclusion}
-\label{sec:org8aed903}
+\label{sec:orgf5a95d9}
 The speedup is easily viewable in tests above, while no significant speedup
 is seen in the Int32 operators. I assume this is because only those functions
 make efficient use of the Global vs Shared memory
 
+\subsection{Resubmission}
+\label{sec:org8a97f47}
+For the resubmission of this task i want to describe the methodology of these benchmarks.  
+All of the tests described above have been run on the \texttt{gpu04} machine with the
+following stats:
+\begin{verbatim}
+Device name: GeForce RTX 2080 Ti
+Number of hardware threads: 69632
+Max block size: 1024
+Shared memory size: 49152
+\end{verbatim}
+To run the benchmarks, i use the \texttt{test-pbb} executable with an array length
+of 50003565 and a block size of 128. Later on when testing the race condition
+that occurs, i set the block size to 1024, however to avoid exhausting gpu resources
+all other benchmarks run with a blocksize of 128.
+
 \section{Task 3: Scanning reimagined}
-\label{sec:org52094bb}
+\label{sec:org1c3697d}
 In this task i implement a parallel inclusive scan at WARP level. The algorithm
 to be implemented is explained in detail in the lecture notes for the second 
 lab class, so the actual implementation is pretty trivial
@@ -129,7 +199,7 @@ scanIncWarp( volatile typename OP::RedElTp* ptr, const unsigned int idx ) {
 }
 \end{verbatim}
 \subsection{Performance speedup:}
-\label{sec:org0a7ddb3}
+\label{sec:orgcf5c507}
 After implementing the previous two optimizations, i present the following table:  
 Where \texttt{C = coalesced reads} and \texttt{W = warp-level optimization}, and all results in microsecs
 \begin{center}
@@ -146,7 +216,7 @@ SgmScan Inclusive AddI32 & 1768 & 1694 & 1766 & 1695\\
 \end{center}
 
 \section{Task 4: Scanning 2: electric bugaloo}
-\label{sec:orga9832ea}
+\label{sec:org6ae1ea0}
 In the function \texttt{scanIncBlock} we spot a nasty race condition when running
 with the max size of blocks(1024), the code in question looks like this initially:
 \begin{verbatim}
@@ -214,7 +284,7 @@ however add a possibly expensive call to "syncthreads" and an extraneous
 if statement.
 
 \section{Task 5: Weekly 1 but in C++}
-\label{sec:org2a3ade4}
+\label{sec:orgd270d1d}
 In the first weekly assignment, we wrote a flat version of sparse-matrix
 vector multiplication in Futhark. In this assignment we write the same
 flat algorithm in Cuda, using four kernels: 
@@ -279,7 +349,7 @@ unsigned int num_blocks_shp = ((mat_rows + (block_size - 1)) / block_size);
 The code above is taken from equivalent calculations in weekly 1
 
 \subsection{Speedup}
-\label{sec:org4bddef1}
+\label{sec:orgbc3bd34}
 Running \texttt{make run-spmv} we see a very obvious speedup:
 \begin{verbatim}
 Testing Sparse-MatVec Mul with num-rows-matrix: 11033, vct-size: 2076, block size: 256
@@ -289,4 +359,36 @@ CPU Sparse Matrix-Vector Multiplication runs in: 11499 microsecs
 GPU Sparse Matrix-Vector Multiplication runs in: 16 microsecs
 Sparse Mat-Vect Mult VALID   RESULT
 \end{verbatim}
+
+\subsection{Resubmission}
+\label{sec:orgfb4a8b9}
+\subsubsection{Correct benchmarking}
+\label{sec:orgc9f12c7}
+For the resubmission, my TA correctly pointed out a flaw in how the benchmarks are run.  
+I accidentally a for loop, so only one run would be completed, yet the final time still
+divided by the GPU\textsubscript{RUNS} variable. The Correct benchmark now looks like this:
+\begin{verbatim}
+./test-spmv 11033 2076 256
+Device name: GeForce RTX 2080 Ti
+Number of hardware threads: 69632
+Max block size: 1024
+Shared memory size: 49152
+====
+Testing Sparse-MatVec Mul with num-rows-matrix: 11033, vct-size: 2076, block size: 256
+
+Vect_size: 2076, tot_size: 11511300 mat_rows: 11033
+CPU Sparse Matrix-Vector Multiplication runs in: 12309 microsecs
+GPU Sparse Matrix-Vector Multiplication runs in: 840 microsecs
+Sparse Mat-Vect Mult VALID   RESULT
+\end{verbatim}
+This benchmark is run on the \texttt{gpu04} machine, with gpu specs visible in the benchmark
+above. The inputs to the program is also visible as 
+\texttt{num-rows: 11033, vct-size: 2076, block size: 256}
+
+\subsubsection{Validation}
+\label{sec:orgb755683}
+To ensure the program is valid, aside from a visual inspection of the code, 
+we run the \texttt{test-spmv} program. This program completes both a CPU-sequential run and a 
+GPU run, and validates that both versions compute the same result, using the CPU
+resulting vector as the guiding answer.  
 \end{document}

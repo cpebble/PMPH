@@ -1,4 +1,57 @@
 #+TITLE:Weekly assignment 2
+* Task 1: Flattened Prime computation
+I flattened the prime algorithm into the following futhark(only included
+is the parts we neede to write ourselves, the whole file can be seen in
+=primes-flat.fut= in the code handin) 
+#+BEGIN_SRC futhark
+      -- I need to unwrap mm1s
+      let mm1s = map (\p -> (len / p) - 1) sq_primes 
+      -- Create flag arr
+      let inds = scan (+) 0 mm1s
+      let mm1s_rot = map (\i -> if i == 0 then 0 else inds[i-1]) (indices sq_primes)
+      let flags = scatter (replicate flat_size 0) inds sq_primes
+      -- Finally unroll the iota in map
+      let mm1s_tmp = replicate flat_size 1
+      let mm1s_flat = sgmSumI32 flags mm1s_tmp
+      -- flat list of [2..m]
+      let mm1sp2 = map (+1) mm1s_flat
+      -- I need to replicate all of sq_prime inds times
+      -- I can use the flags array to get the indexes of "new" primes
+      let flags_ones = map (\x -> if x == 0 then 0 else 1) flags
+      let p_inds = scan (+) 0 flags_ones
+      let p_expanded = map (\i -> sq_primes[i]) p_inds
+      
+      let not_primes = map2 (*) mm1sp2 p_expanded
+
+#+END_SRC
+
+** Speedups:
+On the GPU04 machine i ran:
+#+BEGIN_SRC bash
+[wbr220@a00333 primes-futhark]$ futhark c primes-naive.fut
+[wbr220@a00333 primes-futhark]$ futhark c primes-seq.fut
+[wbr220@a00333 primes-futhark]$ futhark opencl primes-naive.fut -o primes-naive-opencl
+[wbr220@a00333 primes-futhark]$ futhark opencl primes-flat.fut
+[wbr220@a00333 primes-futhark]$ echo "1000000" | ./primes-naive -t /dev/stderr -r 10 > /dev/null
+6909
+...
+6974
+[wbr220@a00333 primes-futhark]$ echo "1000000" | ./primes-seq -t /dev/stderr -r 10 > /dev/null
+17923
+...
+18639
+[wbr220@a00333 primes-futhark]$ echo "1000000" | ./primes-naive-opencl -t /dev/stderr -r 10 > /dev/null
+10669
+...
+10629
+[wbr220@a00333 primes-futhark]$ echo "1000000" | ./primes-flat -t /dev/stderr -r 10 > /dev/null
+1174
+...
+1139
+#+END_SRC
+And as expected, the flat version computes much faster than its counterparts.
+Noted as the slowest is the sequential version, calculating on the c backend,
+which is also expected.
 * Task 2: MemCpy but faster
 In this task i am asked to improve a written "Copy from/to Global memory from/to Shared memory.  
 The given function(and replacement) is shown below:

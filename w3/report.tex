@@ -1,44 +1,76 @@
-#+TITLE:Weekly assignment 3
-* TODO Task 1: Dependency-analysis transformations 
+% Created 2020-10-02 Fri 16:22
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{grffile}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\date{\today}
+\title{Weekly assignment 3}
+\hypersetup{
+ pdfauthor={},
+ pdftitle={Weekly assignment 3},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 27.1 (Org mode 9.3)}, 
+ pdflang={English}}
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\section{{\bfseries\sffamily TODO} Task 1: Dependency-analysis transformations}
+\label{sec:org64498d4}
 I consider the following pseudocode
-#+BEGIN_SRC c
+\begin{verbatim}
 float A[2*M];
 
 for (int i = 0; i < N; i++) {
     A[0] = N;
 
     for (int k = 1; k < 2*M; k++) {
-        A[k] = sqrt(A[k-1] * i * k);
+	A[k] = sqrt(A[k-1] * i * k);
     }
 
     for (int j = 0; j < M; j++) {
-        B[i+1, j+1] = B[i, j] * A[2*j  ];
-        C[i,   j+1] = C[i, j] * A[2*j+1];
+	B[i+1, j+1] = B[i, j] * A[2*j  ];
+	C[i,   j+1] = C[i, j] * A[2*j+1];
     }
 }
-#+END_SRC
+\end{verbatim}
 And answer the following questions:
-** Why neither the outer loop nor the inner loops are parallel
+\subsection{Why neither the outer loop nor the inner loops are parallel}
+\label{sec:org88463c3}
 First off, we look at the inner loops:  
 Section 5.2 of the lecture notes start off:
-#+BEGIN_SRC quote
+\begin{verbatim}
 A loop is said to be parallel if its execution does not cause any (true, anti or output) dependencies
-#+END_SRC
-We see easily the first loop =k in 0,...,2*M= that there is a RAW dependency
-In that $A[k_b]$ is read in the next iteration when $k_a = k_b + 1$.
+\end{verbatim}
+We see easily the first loop \texttt{k in 0,...,2*M} that there is a RAW dependency
+In that \(A[k_b]\) is read in the next iteration when \(k_a = k_b + 1\).
 For the next loop, we also see dependencies in the next inner loop in B and C.
 
 For the outer loop i present the case of accesses to B, with the
-following iterations (i_1, j_1), (i_2, j_2) reads from and writes to the same element.
-We get the equation system: $i_1 + 1 = i_2, j_1 + 1 = j_21$, which neccesarily means:
-$i_1 < i_2, j_1 < j_2$ giving us a well-formed direction vector =[<,<]= and a RAW 
+following iterations (i\textsubscript{1}, j\textsubscript{1}), (i\textsubscript{2}, j\textsubscript{2}) reads from and writes to the same element.
+We get the equation system: \(i_1 + 1 = i_2, j_1 + 1 = j_21\), which neccesarily means:
+\(i_1 < i_2, j_1 < j_2\) giving us a well-formed direction vector \texttt{[<,<]} and a RAW 
 dependency, and thus the outside isn't parallel by theorem 6
 
-** Why it is safe to privatize =A=
-It is safe to privatize =A= Since we use a unique =A= In every iteration, e.g. every iteration
-=A= is initialized to the following: =A[k] = sqrt(A[k-1] * i * k)=. We Set up the following
+\subsection{Why it is safe to privatize \texttt{A}}
+\label{sec:org0a39c80}
+It is safe to privatize \texttt{A} Since we use a unique \texttt{A} In every iteration, e.g. every iteration
+\texttt{A} is initialized to the following: \texttt{A[k] = sqrt(A[k-1] * i * k)}. We Set up the following
 code:
-#+BEGIN_SRC c
+\begin{verbatim}
 float A[2*M];
 float A_[2*M];
 for (int i = 0; i < N; i++) {
@@ -57,36 +89,50 @@ for (int i = 0; i < N; i++) {
 for (int i = 0; i < 2*M; i++){
     A[i] = A_[i];
 }
-#+END_SRC
-** Why it is safe to distribute the outermost loop across the =A[0] = N;= statement, along with the two inner loops
+\end{verbatim}
+\subsection{Why it is safe to distribute the outermost loop across the \texttt{A[0] = N;} statement, along with the two inner loops}
+\label{sec:org5dbf5df}
 I look at the dependencies in the graph:  
-- S1 has no dependencies, since A_ is a new array
-- S2 has a RAW dependency with S2 [=, <]
-- S3 has a dependency on S3 [<, <]  
-  - Iter (i_1, j_1) writes to B[i+1, j+1]. Iter (i_2, j_2) reads from B[i, j].
-  For these to write to the same memory adress, the following holds:
-#+BEGIN_SRC 
+\begin{itemize}
+\item S1 has no dependencies, since A\_ is a new array
+\item S2 has a RAW dependency with S2 [=, <]
+\item S3 has a dependency on S3 [<, <]  
+\begin{itemize}
+\item Iter (i\textsubscript{1}, j\textsubscript{1}) writes to B[i+1, j+1]. Iter (i\textsubscript{2}, j\textsubscript{2}) reads from B[i, j].
+\end{itemize}
+For these to write to the same memory adress, the following holds:
+\end{itemize}
+\begin{verbatim}
 i_1 + 1 = i_2
 j_1 + 1 = i_2
 =>
 i_1 < i_2
 j_1 < j_2
-#+END_SRC
-- S4 has a dependency on S4 [=, <]
-  - Iter (i_1, j_1) writes to C[i, j+1], Iter (i_2, j_2) Reads from C[i, j]. The following holds
-#+BEGIN_SRC 
+\end{verbatim}
+\begin{itemize}
+\item S4 has a dependency on S4 [=, <]
+\begin{itemize}
+\item Iter (i\textsubscript{1}, j\textsubscript{1}) writes to C[i, j+1], Iter (i\textsubscript{2}, j\textsubscript{2}) Reads from C[i, j]. The following holds
+\end{itemize}
+\end{itemize}
+\begin{verbatim}
 i_1 = i_2
 j_1 + 1 = j_2
 =>
 i_1 = i_2
 j_1 < j_2
-#+END_SRC
-- S3 has a dependency on S2:  
-** Using direction vectors, Determine which loops are parallel
-** Can loop interchange be applied?
-* Task 2: Parallel operator intuition
+\end{verbatim}
+\begin{itemize}
+\item S3 has a dependency on S2:
+\end{itemize}
+\subsection{Using direction vectors, Determine which loops are parallel}
+\label{sec:org50bf447}
+\subsection{Can loop interchange be applied?}
+\label{sec:orgab91a4a}
+\section{Task 2: Parallel operator intuition}
+\label{sec:org62ad9aa}
 We look at the pseudocode:
-#+BEGIN_SRC c
+\begin{verbatim}
 float A[N,64];
 float B[N,64];
 float accum, tmpA;
@@ -98,15 +144,17 @@ for (int i = 0; i < N; i++) { // outer loop
 /*S3*/  B[i,j] = accum;
     }
 }
-#+END_SRC
-** Is the outer loop parallel?
+\end{verbatim}
+\subsection{Is the outer loop parallel?}
+\label{sec:orgac0c849}
 The outer loop has a dependency.  
 With Accum being written to multiple times in each iteration, we see
 it form a WAW dependency, and therefore by thm. 6 it cannot be parallel.
 
-** What technique can be used to make it parallel?
+\subsection{What technique can be used to make it parallel?}
+\label{sec:org950a87b}
 Array Expansion(Privatization)
-#+BEGIN_SRC c
+\begin{verbatim}
 float A[N,64];
 float B[N,64];
 float Accum[N];
@@ -120,38 +168,41 @@ for (int i = 0; i < N; i++) { // outer loop
     }
 }
 accum = Accum[N-1];
-#+END_SRC
+\end{verbatim}
 
-** Is the inner loop parallel
+\subsection{Is the inner loop parallel}
+\label{sec:org868ce9f}
 Looking at S2, we get the following dependency vector:
-#+BEGIN_SRC 
+\begin{verbatim}
 S2 accum
 i_1, j_1 reads accum
 i_2, j_2 writes accum
 i_1 = i_2
 j_1 < j_2
 deps = [=, <]
-#+END_SRC
+\end{verbatim}
 By Thm. 6 this loop isn't parallel
 
-** Write the loop nest using parallel operators
+\subsection{Write the loop nest using parallel operators}
+\label{sec:orgd178f50}
 We realize that each row in B is equivalent to scanning a squared row in map. Intuitively
 we also realize that we want at least two maps, one for the outer loop, and one for the inner
 loop. I produce the following output:
-#+BEGIN_SRC futhark
+\begin{verbatim}
 map (\A_i -> scan (+) 0 (map (\x -> x*x) A_i ) A
-#+END_SRC
+\end{verbatim}
 We verify this using the futhark repl, and a compiled c version beside it. It is tested using
-#+BEGIN_SRC futhark
+\begin{verbatim}
 main (replicate 3 (0...63) :> [3][64]i32)
-#+END_SRC
+\end{verbatim}
 Recognizing that there will never occur a value not representable by i32 in the given
 range. The code output matches that of an optimised C program
-* Task 3: Spatial locality optimizing in CUDA
+\section{Task 3: Spatial locality optimizing in CUDA}
+\label{sec:org6ed391d}
 For this task, i had to implement the code from the previous example in handed-out 
 CUDA code. Following the previously implemented code closely, along with the code
 example on page 90 of the lecture notes, i implemented the following kernel:
-#+BEGIN_SRC cpp
+\begin{verbatim}
 __global__ void 
 transfProg(float* Atr, float* Btr, unsigned int N) {
     unsigned int gid = (blockIdx.x * blockDim.x + threadIdx.x);
@@ -160,40 +211,41 @@ transfProg(float* Atr, float* Btr, unsigned int N) {
     unsigned int thd_offs = gid * N;
 
     for(int j=0; j<64; j++) {
-        float tmpA  = Atr[thd_offs + j];
-        accum = sqrt(accum) + tmpA*tmpA;
-        Btr[thd_offs + j]  = accum;
+	float tmpA  = Atr[thd_offs + j];
+	accum = sqrt(accum) + tmpA*tmpA;
+	Btr[thd_offs + j]  = accum;
     }
 }
-#+END_SRC
+\end{verbatim}
 With the CPU orchestration looking like this:
-#+BEGIN_SRC cpp
+\begin{verbatim}
 // Transpose A
 transposeTiled<float, TILE>(d_A, d_Atr, HEIGHT_A, WIDTH_A);
 // Run the kernel
 transfProg<<< num_blocks, block >>>(d_Atr, d_Btr, num_thds);
 // Transpose B'
 transposeTiled<float, TILE>(d_Btr, d_B, WIDTH_A, HEIGHT_A);
-#+END_SRC
+\end{verbatim}
 For benchmarking i ran the code 100 times, recording each timestamp. I 
 got the following output:
-#+BEGIN_SRC bash
+\begin{verbatim}
 Transpose on GPU runs in: 1381 microsecs, GB/sec: 388.755205
 GPU TRANSPOSITION   VALID!
 Original Program runs on GPU in: 33613 microsecs, GB/sec: 15.972122
 GPU PROGRAM   VALID!
 Coalesced Program with manifested transposition runs on GPU in: 1648 microsecs, GB/sec: 325.771210
 GPU PROGRAM   VALID!
-#+END_SRC
-I ran the above benchmark/validation test on the =GPU04= machine, with a
+\end{verbatim}
+I ran the above benchmark/validation test on the \texttt{GPU04} machine, with a
 NVIDIA GTX 2080 graphics card. It is possible to see that, even with the
 added memory operations of transposing twice that we get an almost 10x
 speedup by using the coalesced memory reads.
 
-* Task 4: Matrix-Matrix Multiplication in CUDA
+\section{Task 4: Matrix-Matrix Multiplication in CUDA}
+\label{sec:org89d3aab}
 After some help from my TA, i managed to convert the psudocode in section
 6.4 into the following kernel:
-#+BEGIN_SRC cpp
+\begin{verbatim}
 template <class ElTp, int T> 
 __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int widthB, int widthA) {
     // ToDo: fill in the kernel implementation of register+block tiled 
@@ -210,53 +262,53 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
     // printf("%d: %d \n", j, gidy);
     #pragma unroll
     for (int i = 0; i < T; i++){
-        cs[i] = 0;
+	cs[i] = 0;
     }
     __syncthreads();
     // So now we add the sequential K loop that actually does "something"
     for(int kk = 0; kk < widthA; kk +=T ){
-        // Copy the array slice A[ii:ii+T, j] into shared memory
-        if ((kk+tidx) < widthB && gidy < heightA)
-            Ash[tidy][tidx] = A[(kk+tidx) + (gidy*widthA)];
-        else
-            Ash[tidy][tidx] = 0.0f;
+	// Copy the array slice A[ii:ii+T, j] into shared memory
+	if ((kk+tidx) < widthB && gidy < heightA)
+	    Ash[tidy][tidx] = A[(kk+tidx) + (gidy*widthA)];
+	else
+	    Ash[tidy][tidx] = 0.0f;
 
-        __syncthreads();
-        // Then synchronize
-        for (int k = 0; k < T; k++) {
-            float b;
-            if (kk+k < widthA && j < widthB)
-                b = B[(kk+k)*widthB+(j)];
-            else
-                b = 0.0f;
-            #pragma unroll
-            for(int i = 0; i < T; i++){
-                cs[i] += Ash[i][k] * b;
-            }
-        }
-        __syncthreads();
+	__syncthreads();
+	// Then synchronize
+	for (int k = 0; k < T; k++) {
+	    float b;
+	    if (kk+k < widthA && j < widthB)
+		b = B[(kk+k)*widthB+(j)];
+	    else
+		b = 0.0f;
+	    #pragma unroll
+	    for(int i = 0; i < T; i++){
+		cs[i] += Ash[i][k] * b;
+	    }
+	}
+	__syncthreads();
     }
     #pragma unroll
     for(int i = 0; i < T; i++){
-        if ((ii + i < heightA) && (j < widthB)){
-            C[((ii + i) * widthB) + j] = cs[i];
-        }
+	if ((ii + i < heightA) && (j < widthB)){
+	    C[((ii + i) * widthB) + j] = cs[i];
+	}
     }
 
 }
-#+END_SRC
+\end{verbatim}
 We parralelize jjj and jj, ii and iii, with their indices being calculated at
 the top of the kernel. Running the code on GPU04, with the following parameters:
-#+BEGIN_SRC cpp
+\begin{verbatim}
 #define WIDTH_A  2048//1024//1024 //1024//2048
 #define HEIGHT_A 2048//1024//2048//2048//2048
 #define WIDTH_B  2048//4096//2048
 #define TILE     16
 
 #define GPU_RUNS 100
-#+END_SRC
+\end{verbatim}
 Results in the following benchmark:
-#+BEGIN_SRC bash
+\begin{verbatim}
 ./assignm3-task4
 Sequential Naive version runs in: 4663266 microsecs
 GPU Naive MMM version ... VALID RESULT!
@@ -268,6 +320,7 @@ GPU Block-Tiled MMM Performance= 1466.11 GFlop/s, Time= 11718.000 microsec 128 1
 GPU Block+Register Tiled MMM version ... VALID RESULT!
 GPU Block+Register Tiled MMM version runs in: 2860 microsecs
 GPU Block+Register Tiled MMM Performance= 6006.95 GFlop/s, Time= 2860.000 microsec 8 128
-#+END_SRC
+\end{verbatim}
 As can be seen, we're approaching 6 Teraflops using our register-optimised
 version, getting almost a 6x speedup than the naive GPU multiplication. 
+\end{document}
