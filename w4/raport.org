@@ -186,8 +186,50 @@ For this task we consider a 16-by-16 torus interconnection network, where each
 link has a bandwidth of 100 Mbits/s. We determine the following properties:
 
 ** Network diameter
+The network diameter is 16. We find this out, by drawing the network as a grid
+and finding the length from an extreme to a middle point.
 
 ** Bisection bandwidth
+The bisection bandwidth is the bisection width multiplied by the link bandwidth.
+The width is 32, and the bandwidth is 100 Mbits. The bisection bandwidth is:
+#+BEGIN_SRC 
+32 * 100 Mb/s = 32 Gbits / sec
+#+END_SRC
 
 ** Bandwidth per node
+We first calculate the number of links in the network: 
+$\frac{4 \cdot 16\cdot 16}{2} = 512$. The bandwidth per node is calculated
+as follows:
+#+BEGIN_SRC 
+(512 * 100Mb/s) / 256 =  200Mb/s
+#+END_SRC
+
 * Task 5
+For this task, we are comparing a n-by-n torus with an n-dimensional hypercube, to
+connect 4, 16, 64 and 256 nodes.  
+** At what scale does the hypercube provide a higher bisection width?
+We fill out the following diagram for Bisection widths of hypercubes and tori
+|   N | tori n | Hypercube k | Torus B-width | Hypercube B-width |
+|-----+--------+-------------+---------------+-------------------|
+|   4 |      2 |           2 |             4 |                 2 |
+|  16 |      4 |           4 |             8 |                 8 |
+|  64 |      8 |           6 |            16 |                32 |
+| 256 |     16 |           8 |            32 |               128 |
+|     |        |             |               |                   |
+So we see that from n = 64, the bisection width is larger
+
+** What is the network diameter and switch degree for the hypercube at that scale?
+Looking at the slides, we get the following formulas:
+#+BEGIN_SRC 
+diameter: k = 6
+Switch degree: k = 6
+#+END_SRC
+
+** What are the merits of the two topologies
+Following the same slide comparison, we see that the hypercube has a larger
+bysection width, growing by an exponential factor, instead of the tori growing
+by a linear factor($2n$). The hypercube however grows linearly on the switch degree
+where the tori has a fixed degree of 4. The tori is thus cheaper and less complex.  
+Another comparison that is obvious is the network size where the $n$ value of the
+tori will grow faster than the $k$ value of the hypercube.
+
