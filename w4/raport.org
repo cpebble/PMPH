@@ -1,0 +1,193 @@
+#+TITLE: Weekly Assignment 4
+We get the timing table:  
+| Req Type                                  | Time to carry out | Traffic     |
+|-------------------------------------------+-------------------+-------------|
+| Read Hit                                  | 1 cycle           | N/A         |
+| Write Hit                                 | 1 cycle           | N/A         |
+| Read serviced by next level               | 40 Cycles         | 6 bytes + B |
+| Read-excl. request serviced by next level | 40 Cycles         | 6 bytes + B |
+| Bus Upgrade/Update request                | 10 Cycles         | 10 bytes    |
+|-------------------------------------------+-------------------+-------------|
+
+
+* Task 1
+For this task we assume a multiprocessor with a 4 cores and private cache units
+connected by a bus, and we want to compare the MSI with MESI protocol. We will
+be looking at a sequence of accesses:
+#+BEGIN_SRC 
+R1/X, W1/X, W1/X, R2/X, W2/x, W2/X, R3/X, W3/X, R4/X, W4/X, W4/X
+#+END_SRC
+
+** Subtask a
+We assume that a transaction from state E to state M brings no access cost.
+How many cycles does it take to execute the access sequence under MSI vs MESI.
+
+*In the case of MSI*:  
+On a Read we transition from Invalid(I) to Shared(S) with a bus read(40c)  
+On the First Write we transition from S to modified(M) with a bus upgrade (10c)  
+On the Next Write, we are already in a modified state, and it only takes (1c)  
+
+The first sequence thus takes =40 + 10 + 1 = 51= cycles. For the next three
+sequences, the cost is equivalent: =I -> S, S -> M, M -> M= and the final
+cost for the MSI case is:
+#+BEGIN_SRC 
+4(40 + 10 + 1) = 204
+#+END_SRC
+
+*In the case of MSI*
+For the first processor, we go from Invalid to Exclusive(E) with a bus read(40c).  
+The first write takes os =E -> M= at 0 cycles cost. The next write continues in
+=M -> M= fashion. The cost is then =40c= for the first processor.  
+The second processor moves from invalid to shared, since the value isn't exclusive
+but shared between processors. We have a =I -> S= at 40 cycles. On the write we
+still transition into modified: =S -> M= at the cost of a bus upgrade(10c).  
+We now get the cost:
+#+BEGIN_SRC 
+40 + 3(40 + 10 + 1) = 193
+#+END_SRC
+
+
+** Subtask b
+In this task, we compare generated traffic. Size of a block B is 32
+
+For MSI:
+#+BEGIN_SRC 
+4 * (6(reads) + 32(B) + 10) = 192
+#+END_SRC
+
+In the case of MESI:
+#+BEGIN_SRC 
+3 * (6(reads) + 32(B) + 10) + (6 + 32) = 182
+
+#+END_SRC
+We save the 10 bytes of a bus upgrade using the MESI protocol
+
+* Task 2
+For the second task we still consider a multiprocessor, this time with three cores.
+We access four memory locations A, B, C and D. In the table below Reads and writes
+are written in, along with a miss classification and whether the miss could be ignored
+and still have guaranteed correct execution.
+| Time | Proc 1  | Proc 2 | Proc  3 |   | Miss               | Could be ignored |
+|------+---------+--------+---------+---+--------------------+------------------|
+|    1 | Read A  |        |         |   | Cold               | No               |
+|    2 |         | Read B |         |   | Cold               | No               |
+|    3 |         |        | Read C  |   | Cold               | No               |
+|    4 | Write A |        |         |   | W hit              | No               |
+|    5 |         |        | Read D  |   | Cold               | No               |
+|    6 |         | Read B |         |   | False sharing miss | Yes              |
+|    7 | Write B |        |         |   | W hit              | No               |
+|    8 |         |        | Read C  |   | Replacement miss   | No               |
+|    9 |         | Read B |         |   | True sharing       | No               |
+|------+---------+--------+---------+---+--------------------+------------------|
+
+* Task 3
+** Subtask a
+I determine the number of cycles needed to handle a read-cache miss when the home
+node is the same as the local node, and the memory copy is clean.
+
+Since we miss, but have no dirty data or other nodes to services, we look to the
+description and see that the time for the home node to process a request is 
+50 cycles, and the time to install in our local node is also 50 cycles.
+/However/ since the local and remote node is the same, we ignore one of the
+calls. The total number of cycles is thus
+#+BEGIN_SRC 
+50(request) + 1(Cache miss)
+#+END_SRC
+
+The traffic across nodes is 0 since everything happens locally.
+** Subtask b
+We determine the number of cycles in the same scenario as the previous subtask,
+except the memory copy is dirty
+
+Since the node is dirty, we have to do a remote read/write to fix the dirty
+node.  
+We look up the presence vectors to find which node is dirty. The dirty node now
+reloads the dirty memory area, from the host. The cost is:
+#+BEGIN_SRC 
+1(miss)
++ 50(dir lookup) 
++ 20(update) 
++ 50(Dirty cache read) 
++ 100(flush) 
++ 50 (home node update)
+= 271
+#+END_SRC
+
+And the traffic:
+#+BEGIN_SRC 
+2*6 + 32 = 44
+#+END_SRC
+
+** Subtask c
+We now look at the scenarios when the Home node is different from the local node
+and the memory copy is clean.  
+
+There is a remote read, and a flush of (H). The cost is now:
+#+BEGIN_SRC 
+1 + 20(remote update) + 50(Lookup) + 100(flush) + 50(Update)
+#+END_SRC
+And the traffic:
+#+BEGIN_SRC 
+2*6 + 32 = 44
+#+END_SRC
+
+** Subtask d
+We now look at the same scenario but with a dirty memory copy
+
+We have a remote read from local to Home. At the home node, we perform a lookup,
+and discover the dirty bit is set. The home node then has to transfer from it's
+own cache. Then the local gets updated. The cost is as such:
+#+BEGIN_SRC 
+1 + 20 + 50 + 100 + 50 = 221
+#+END_SRC
+The traffic is
+#+BEGIN_SRC 
+2*6 + 32 = 44
+#+END_SRC
+
+** Subtask e
+Finally we determine the number of cycles needed to handle a read-cache miss 
+when the local note is different is different from the home node, the memory
+copy is dirty, and the remote node is different from the home node.
+
+We start off with a remote read to home. Home finds that it's dirty, and reads
+the Dirty. The dirty flushes to Home. Home performs a memory update.
+Then home flushes to Local.
+
+The final cost is:
+#+BEGIN_SRC 
+1 + 20 + 50 + 20 + 50 + 100 + 50 + 100 + 50
+= 441
+#+END_SRC
+
+And the traffic:
+#+BEGIN_SRC 
+4*6 + 2*32 = 88
+#+END_SRC
+
+This is where the DASH protocol can optimise (Since previously, we had < 3 hops)  
+With DASH, when the home is doing a read from the dirty block, it sends the requesting
+address along. D flushes directly to L and an aknowledgement to H.  
+The cost now looks like:
+#+BEGIN_SRC 
+1 + 20 + 50 + 20 + 50 + 100 + 50 = 291
+#+END_SRC
+
+And the traffic:
+#+BEGIN_SRC 
+2*6 + 2(6+32) = 88
+
+#+END_SRC
+
+
+
+* Task 4
+For this task we consider a 16-by-16 torus interconnection network, where each
+link has a bandwidth of 100 Mbits/s. We determine the following properties:
+
+** Network diameter
+
+** Bisection bandwidth
+
+** Bandwidth per node
+* Task 5
