@@ -77,12 +77,9 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
     int i; // Altid sequential
     int j_ = (threadIdx.y*T) + j__;
     int j  = j_ + threadIdx.x;
-    int gidx = threadIdx.x + blockIdx.x*blockDim.x;
-    int gidy = threadIdx.y + blockIdx.y*blockDim.y;
     int tidy = threadIdx.y, tidx = threadIdx.x;
     __shared__ float Ash[T][T];
     ElTp cs[T];
-    // printf("%d: %d \n", j, gidy);
     #pragma unroll
     for (int i = 0; i < T; i++){
         cs[i] = 0;
@@ -91,8 +88,8 @@ __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int w
     // So now we add the sequential K loop that actually does "something"
     for(int kk = 0; kk < widthA; kk +=T ){
         // Copy the array slice A[ii:ii+T, j] into shared memory
-        if ((kk+tidx) < widthB && gidy < heightA)
-            Ash[tidy][tidx] = A[(kk+tidx) + (gidy*widthA)];
+        if ((kk+tidx) < widthB && (ii+tidy) < heightA)
+            Ash[tidy][tidx] = A[(kk+tidx) + ((ii+tidy)*widthA)];
         else
             Ash[tidy][tidx] = 0.0f;
 
