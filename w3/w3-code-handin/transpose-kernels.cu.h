@@ -76,13 +76,10 @@ origProg(float* A, float* B, unsigned int N) {
  */ __global__ void 
 transfProg(float* Atr, float* Btr, unsigned int N) {
     unsigned int gid = (blockIdx.x * blockDim.x + threadIdx.x);
-if(gid >= N) return;
-    float accum = 0.0, tmpA = 0, tmpB = 0;
-    float t = Atr[gid];
-    tmpB = t*t;
-    Btr[gid] = tmpB;
-    accum = tmpB;
-    for(int j=1; j<64; j++) {
+    if(gid >= N) return;
+    float accum = 0.0f, tmpA = 0.0f, tmpB = 0.0f;
+
+    for(int j=0; j<64; j++) {
         float tmpA  = Atr[j * N + gid];
         accum = sqrtf(accum) + tmpA*tmpA;
         Btr[j * N + gid]  = accum;
