@@ -81,6 +81,7 @@ if(gid >= N) return;
     float t = Atr[gid];
     tmpB = t*t;
     Btr[gid] = tmpB;
+    accum = tmpB;
     for(int j=1; j<64; j++) {
         float tmpA  = Atr[j * N + gid];
         accum = sqrtf(accum) + tmpA*tmpA;
