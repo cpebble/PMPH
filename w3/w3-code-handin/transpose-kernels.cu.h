@@ -73,11 +73,10 @@ origProg(float* A, float* B, unsigned int N) {
  *
  * Task3.a: fill in the implementation of this kernel,
  *          such that all accesses are coalesced.
- */
-__global__ void 
+ */ __global__ void 
 transfProg(float* Atr, float* Btr, unsigned int N) {
     unsigned int gid = (blockIdx.x * blockDim.x + threadIdx.x);
-//if(gid >= N) return;
+if(gid >= N) return;
     float accum = 0.0, tmpA = 0, tmpB = 0;
     float t = Atr[gid];
     tmpB = t*t;
