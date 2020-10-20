@@ -83,7 +83,6 @@ transfProg(float* Atr, float* Btr, unsigned int N) {
         float tmpA  = Atr[j * N + gid];
         accum = sqrtf(accum) + tmpA*tmpA;
         Btr[j * N + gid]  = accum;
-        tmpB = accum;
     }
 }
 
