@@ -77,7 +77,7 @@ origProg(float* A, float* B, unsigned int N) {
 transfProg(float* Atr, float* Btr, unsigned int N) {
     unsigned int gid = (blockIdx.x * blockDim.x + threadIdx.x);
     if(gid >= N) return;
-    float accum = 0.0f, tmpA = 0.0f, tmpB = 0.0f;
+    float accum = 0.0f, tmpA;
 
     for(int j=0; j<64; j++) {
         float tmpA  = Atr[j * N + gid];
